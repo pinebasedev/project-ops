@@ -27,15 +27,15 @@ importers:
   apps/control-plane:
     dependencies:
       hono:
-        specifier: ^4.13.5
-        version: 4.13.5
+        specifier: ^4.13.7
+        version: 4.13.7
     devDependencies:
       '@cloudflare/vite-plugin':
         specifier: ^1.54.4
-        version: 1.54.4(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1))(wrangler@4.129.0(@cloudflare/workers-types@5.20260904.1))
+        version: 1.54.4(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1))(wrangler@4.129.0(@cloudflare/workers-types@5.20260905.1))
       '@cloudflare/workers-types':
-        specifier: ^5.20260904.1
-        version: 5.20260904.1
+        specifier: ^5.20260905.1
+        version: 5.20260905.1
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -47,7 +47,7 @@ importers:
         version: 5.0.0(@types/node@26.4.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1))
       wrangler:
         specifier: ^4.129.0
-        version: 4.129.0(@cloudflare/workers-types@5.20260904.1)
+        version: 4.129.0(@cloudflare/workers-types@5.20260905.1)
 
   apps/dashboard:
     devDependencies:
@@ -73,8 +73,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       shadcn-svelte:
-        specifier: ^1.6.0
-        version: 1.6.0(svelte@5.57.0)
+        specifier: ^1.6.1
+        version: 1.6.1(svelte@5.57.0)
       svelte:
         specifier: ^5.56.1
         version: 5.57.0
@@ -104,7 +104,7 @@ importers:
         version: 5.0.0(@types/node@26.4.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0))
       wrangler:
         specifier: ^4.97.0
-        version: 4.129.0(@cloudflare/workers-types@5.20260904.1)
+        version: 4.129.0(@cloudflare/workers-types@5.20260905.1)
 
 packages:
 
@@ -166,8 +166,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@5.20260904.1':
-    resolution: {integrity: sha512-SbulPvrdb4j5iISDr81Iw+YpNCG4Bb6xRqV3arkgn/Ib6STMaoG63lhPnuWqmZdakOn0qS1OUudBMdxtBFx0Jg==}
+  '@cloudflare/workers-types@5.20260905.1':
+    resolution: {integrity: sha512-ebDpVTgrnee245IRBTazyfjfmZas+HJehZyVQkKmUozsBN8RzvXXMI0XjjcT2rQjw+0USewfEGGLYiHO+TL0Sg==}
 
   '@commitlint/cli@21.2.2':
     resolution: {integrity: sha512-a+6hQxIxnpdvSvS2apvttPNbEliYsVC3PqFYDiiB2kjbwIsQsj1urvQ4Tkf70pKYozPalKAuRQmm/GHwndduqA==}
@@ -1458,8 +1458,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  hono@4.13.5:
-    resolution: {integrity: sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==}
+  hono@4.13.7:
+    resolution: {integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ==}
     engines: {node: '>=16.9.0'}
 
   husky@9.1.7:
@@ -1778,8 +1778,8 @@ packages:
   set-cookie-parser@3.1.2:
     resolution: {integrity: sha512-5/r/lTwbJ3zQ+qwdUFZYeRNqda7P5HD8zQKqlSjdGt1/S0cjLAphHusj4Y58ahDtWn/g32xrIS58/ikOvwl0Lw==}
 
-  shadcn-svelte@1.6.0:
-    resolution: {integrity: sha512-1iiXkPfxOlOAWCIfpwT7MvxKpGbPMOQDeRfRP/3mG8CPdQmzPrQnLyPTZKA8i67zxREYZjru+R3v5lq4+gGlOA==}
+  shadcn-svelte@1.6.1:
+    resolution: {integrity: sha512-qmbdBQ3GLO+kfLWlF7H+UZ0YbGOv4UnTy3r3LP6yK5QfO5SW+989ohKoAjKe+caHYWz7oFYqflVZablIewuBiw==}
     hasBin: true
     peerDependencies:
       svelte: ^5.0.0
@@ -2072,14 +2072,14 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260903.1
 
-  '@cloudflare/vite-plugin@1.54.4(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1))(wrangler@4.129.0(@cloudflare/workers-types@5.20260904.1))':
+  '@cloudflare/vite-plugin@1.54.4(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1))(wrangler@4.129.0(@cloudflare/workers-types@5.20260905.1))':
     dependencies:
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260903.1)
       miniflare: 5.20260903.0-alpha
       unenv: 2.0.0-rc.24
       vite: 8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1)
       workerd: 1.20260903.1
-      wrangler: 4.129.0(@cloudflare/workers-types@5.20260904.1)
+      wrangler: 4.129.0(@cloudflare/workers-types@5.20260905.1)
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
@@ -2100,7 +2100,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260903.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260904.1': {}
+  '@cloudflare/workers-types@5.20260905.1': {}
 
   '@commitlint/cli@21.2.2(@types/node@26.4.1)(conventional-commits-parser@7.1.2)(typescript@7.0.2)':
     dependencies:
@@ -3000,7 +3000,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  hono@4.13.5: {}
+  hono@4.13.7: {}
 
   husky@9.1.7: {}
 
@@ -3276,7 +3276,7 @@ snapshots:
 
   set-cookie-parser@3.1.2: {}
 
-  shadcn-svelte@1.6.0(svelte@5.57.0):
+  shadcn-svelte@1.6.1(svelte@5.57.0):
     dependencies:
       commander: 14.0.3
       node-fetch-native: 1.6.7
@@ -3529,7 +3529,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260903.1
       '@cloudflare/workerd-windows-64': 1.20260903.1
 
-  wrangler@4.129.0(@cloudflare/workers-types@5.20260904.1):
+  wrangler@4.129.0(@cloudflare/workers-types@5.20260905.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260903.1)
@@ -3540,7 +3540,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260903.1
     optionalDependencies:
-      '@cloudflare/workers-types': 5.20260904.1
+      '@cloudflare/workers-types': 5.20260905.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
