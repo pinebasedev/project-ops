@@ -1,0 +1,9 @@
+{
+  "name": "cloudflare-idp",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.21.0"
+}
