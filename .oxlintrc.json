@@ -11,5 +11,6 @@
   "rules": {},
   "env": {
     "builtin": true
-  }
+  },
+  "ignorePatterns": ["**/.claude/**", "**/.agents/**", "**/agent/**"]
 }
