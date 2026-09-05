@@ -58,7 +58,9 @@ Adopted directly from Svelteflare's Hono/SvelteKit patterns — the reference re
 
 ## Local development
 
-Run locally via `@cloudflare/vite-plugin`, which runs the real `workerd` runtime inside Vite's dev server — not a Node.js simulation. This is separate from the CI-time test suites (unit tests, and the live Integration Test suite described above); it's for manual local testing during development.
+The control-plane API runs locally via `@cloudflare/vite-plugin`, which runs the real `workerd` runtime inside Vite's dev server — not a Node.js simulation. This is separate from the CI-time test suites (unit tests, and the live Integration Test suite described above); it's for manual local testing during development.
+
+The dashboard is a client-rendered SPA (`@sveltejs/adapter-static`, `ssr` disabled) deployed as a Cloudflare Workers assets-only site — it has no server-side Worker code to run, so `@cloudflare/vite-plugin` doesn't apply to it. `vite dev` covers local development; `wrangler dev` against the built `dist/` previews the real asset-serving and SPA-fallback behavior before deploy.
 
 ## Tooling & repository conventions
 

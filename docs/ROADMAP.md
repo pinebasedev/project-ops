@@ -12,11 +12,11 @@ Full implementation sequence, in build order. Each ticket is sized to be roughly
 
 ## Phase 0 — Foundations
 
-- [ ] **P0-01** `chore(tooling)` Initialize pnpm workspace: `package.json`, `pnpm-workspace.yaml`, `apps/control-plane`, `apps/dashboard`. No shared `packages/ui` (ADR: inline UI decision, see `ARCHITECTURE.md`).
-- [ ] **P0-02** `chore(tooling)` Configure the Vite+ toolchain: Oxlint + Oxfmt at the workspace root, applied to both apps.
-- [ ] **P0-03** `chore(tooling)` Wire up commitlint + Husky using the config already drafted in `CONTRIBUTING.md` (`commit-msg` hook running `commitlint --edit $1`).
-- [ ] **P0-04** `feat(control-plane)` Scaffold the control-plane app: Hono app-factory (`createApp(overrides)`), `routes/` `middleware/` `helpers/` `db/` folders, `requestId` + `secureHeaders` middleware, centralized `onError`/`notFound` handlers, everything mounted under `/v1`.
-- [ ] **P0-05** `feat(dashboard)` Scaffold the dashboard app: SvelteKit via `@cloudflare/vite-plugin`, Tailwind + shadcn-svelte installed (`pnpm dlx skills add huntabyte/shadcn-svelte` + relevant Svelte skills), empty shell page.
+- [x] **P0-01** `chore(tooling)` Initialize pnpm workspace: `package.json`, `pnpm-workspace.yaml`, `apps/control-plane`, `apps/dashboard`. No shared `packages/ui` (ADR: inline UI decision, see `ARCHITECTURE.md`).
+- [x] **P0-02** `chore(tooling)` Configure the Vite+ toolchain: Oxlint + Oxfmt at the workspace root, applied to both apps.
+- [x] **P0-03** `chore(tooling)` Wire up commitlint + Husky using the config already drafted in `CONTRIBUTING.md` (`commit-msg` hook running `commitlint --edit $1`).
+- [x] **P0-04** `feat(control-plane)` Scaffold the control-plane app: Hono app-factory (`createApp(overrides)`), `routes/` `middleware/` `helpers/` `db/` folders, `requestId` + `secureHeaders` middleware, centralized `onError`/`notFound` handlers, everything mounted under `/v1`.
+- [x] **P0-05** `feat(dashboard)` Scaffold the dashboard app: SvelteKit via `@cloudflare/vite-plugin`, Tailwind + shadcn-svelte installed (`pnpm dlx skills add huntabyte/shadcn-svelte` + relevant Svelte skills), empty shell page.
 
 ## Phase 1 — PR ephemeral environments (Svelteflare only, local-first)
 
