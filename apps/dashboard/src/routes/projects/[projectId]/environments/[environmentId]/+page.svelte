@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { shortSha, statusPresentation } from '$lib/format';
+	import StatusPill from '$lib/components/StatusPill.svelte';
+	import { environmentTitle, shortSha } from '$lib/format';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
 	let deployment = $derived(data.environment.latestDeployment);
-	let status = $derived(statusPresentation(deployment?.status));
 </script>
 
 <div class="mx-auto max-w-2xl px-6 py-10">
@@ -14,7 +14,7 @@
 		class="text-sm text-muted-foreground hover:text-foreground">&larr; Environments</a
 	>
 	<h1 class="mt-2 text-2xl font-semibold text-foreground">
-		{deployment?.prNumber != null ? `PR #${deployment.prNumber}` : data.environment.stageName}
+		{environmentTitle(data.environment, deployment)}
 	</h1>
 	<p class="mt-1 text-sm text-muted-foreground">
 		{data.environment.kind} &middot; stage <span class="font-mono">{data.environment.stageName}</span>
@@ -25,11 +25,7 @@
 		<dl class="mt-3 divide-y divide-border rounded-lg border border-border">
 			<div class="flex justify-between px-4 py-3 text-sm">
 				<dt class="text-muted-foreground">Status</dt>
-				<dd>
-					<span class="rounded-full px-2 py-0.5 text-xs font-medium {status.badgeClass}">
-						{status.label}
-					</span>
-				</dd>
+				<dd><StatusPill status={deployment.status} /></dd>
 			</div>
 			<div class="flex justify-between px-4 py-3 text-sm">
 				<dt class="text-muted-foreground">Commit</dt>
