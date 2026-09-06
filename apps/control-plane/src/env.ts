@@ -1,6 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import type { JWTPayload } from "hono/utils/jwt/types";
 import type { Database } from "./db/client";
+import type { SecretsStoreBinding } from "./helpers/secrets";
 import type { Project } from "./db/schema";
 import type { ObservabilityClient } from "./helpers/observability";
 
@@ -12,7 +13,7 @@ export type Bindings = {
   // The token is a plain `.dev.vars` string locally and a Secrets Store binding
   // (read with `.get()`, see `helpers/secrets.ts`) when deployed (P6-04); the
   // account id is a plain string either way.
-  CLOUDFLARE_API_TOKEN?: string | SecretsStoreSecret;
+  CLOUDFLARE_API_TOKEN?: string | SecretsStoreBinding;
   CLOUDFLARE_ACCOUNT_ID?: string;
   // Cloudflare Access: the Zero Trust team subdomain and the control-plane
   // application's AUD tag. When both are set the Worker verifies the
