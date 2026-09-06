@@ -22,11 +22,11 @@ Full implementation sequence, in build order. Each ticket is sized to be roughly
 
 **Done when:** opening a real PR against Svelteflare provisions an isolated environment, the control plane records it, the preview URL is posted as a PR comment, and merging destroys it — all observable via direct API calls (dashboard comes in Phase 2).
 
-- [ ] **P1-01** `feat(db)` Drizzle schema: `Project`, `Environment` (`kind` enum includes all three values now, even though only `ephemeral` is used yet — avoids a later migration), `Deployment` (`status`, `commit_sha`, `pr_number`, `preview_url`, timestamps). Migrations via `drizzle-kit`.
-- [ ] **P1-02** `feat(api)` Per-project bearer token: mint-token flow, hashed storage on the `Project` row (never the raw value — see the token-storage discussion in `ARCHITECTURE.md`), Bearer-auth middleware guarding write routes.
-- [ ] **P1-03** `feat(control-plane)` Project registration — a route or script to create a `Project` row and mint its token. (Dashboard UI for this can wait; a raw POST or CLI script is enough for now.)
-- [ ] **P1-04** `feat(api)` Deployment callback routes: `POST` to mark a Deployment `in_progress`, and to mark it `done`/`failed` with commit SHA, PR number, preview URL.
-- [ ] **P1-05** `feat(api)` Query routes: list Environments (filterable by `kind`), get an Environment, get a Deployment.
+- [x] **P1-01** `feat(db)` Drizzle schema: `Project`, `Environment` (`kind` enum includes all three values now, even though only `ephemeral` is used yet — avoids a later migration), `Deployment` (`status`, `commit_sha`, `pr_number`, `preview_url`, timestamps). Migrations via `drizzle-kit`.
+- [x] **P1-02** `feat(api)` Per-project bearer token: mint-token flow, hashed storage on the `Project` row (never the raw value — see the token-storage discussion in `ARCHITECTURE.md`), Bearer-auth middleware guarding write routes.
+- [x] **P1-03** `feat(control-plane)` Project registration — a route or script to create a `Project` row and mint its token. (Dashboard UI for this can wait; a raw POST or CLI script is enough for now.)
+- [x] **P1-04** `feat(api)` Deployment callback routes: `POST` to mark a Deployment `in_progress`, and to mark it `done`/`failed` with commit SHA, PR number, preview URL.
+- [x] **P1-05** `feat(api)` Query routes: list Environments (filterable by `kind`), get an Environment, get a Deployment.
 - [ ] **P1-06** `feat(alchemy)` *(Svelteflare repo)* `alchemy.run.ts` provisioning stage `pr-{number}`, remote state via `Cloudflare.state()`, a `GitHub.Comment` resource posting the preview URL. Prove it manually first — `alchemy deploy --stage pr-test`, then `destroy` — before wiring to Actions.
 - [ ] **P1-07** `feat(ci)` *(Svelteflare repo)* GitHub Actions: the two-job pattern from Alchemy's CI guide (deploy job on `pull_request`, cleanup job on `pull_request: closed` with the prod-destroy safety guard). New commits redeploy the same stage.
 - [ ] **P1-08** `feat(integration)` *(Svelteflare repo)* Wire the callback into the workflow: after `alchemy deploy`/`destroy`, `POST` status to the control-plane API using the per-project token from a repo secret.
