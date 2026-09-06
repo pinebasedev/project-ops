@@ -2,9 +2,12 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { environments, projects } from "../db/schema";
+import { projects } from "../db/schema";
 import type { Env } from "../env";
-import { flattenLatestDeployment, withLatestDeployment } from "../helpers/environments";
+import {
+  findEnvironmentWithLatestDeployment,
+  flattenLatestDeployment,
+} from "../helpers/environments";
 import { notFoundJson } from "../helpers/errors";
 import { ObservabilityError, workerServiceName } from "../helpers/observability";
 
@@ -14,10 +17,7 @@ const errorsQuerySchema = z.object({
 
 export const environmentRoutes = new Hono<Env>()
   .get("/:id", async (c) => {
-    const environment = await c.get("db").query.environments.findFirst({
-      where: eq(environments.id, c.req.param("id")),
-      with: withLatestDeployment,
-    });
+    const environment = await findEnvironmentWithLatestDeployment(c.get("db"), c.req.param("id"));
     if (!environment) return notFoundJson(c);
     return c.json(flattenLatestDeployment(environment));
   })
@@ -28,11 +28,9 @@ export const environmentRoutes = new Hono<Env>()
     const db = c.get("db");
     const { limit } = c.req.valid("query");
 
-    const environment = await db.query.environments.findFirst({
-      where: eq(environments.id, c.req.param("id")),
-      with: withLatestDeployment,
-    });
-    if (!environment) return notFoundJson(c);
+    const row = await findEnvironmentWithLatestDeployment(db, c.req.param("id"));
+    if (!row) return notFoundJson(c);
+    const environment = flattenLatestDeployment(row);
 
     const project = await db.query.projects.findFirst({
       where: eq(projects.id, environment.projectId),
@@ -40,10 +38,9 @@ export const environmentRoutes = new Hono<Env>()
     if (!project) return notFoundJson(c);
 
     const workerName = workerServiceName(project, environment);
-    const latestDeployment = environment.deployments[0] ?? null;
 
     // No deployment yet — there's no window to query and nothing to show.
-    if (!latestDeployment) {
+    if (!environment.latestDeployment) {
       return c.json({ workerName, since: null, errors: [] });
     }
 
@@ -52,7 +49,11 @@ export const environmentRoutes = new Hono<Env>()
       return c.json({ error: "Observability is not configured" }, 503);
     }
 
-    const since = latestDeployment.createdAt;
+    // The window opens at the latest Deployment. For a long-idle Environment that
+    // can predate the Telemetry API's retention horizon, in which case the query
+    // just comes back empty — acceptable, and simpler than clamping to a horizon
+    // whose length is plan-dependent and unconfirmed (see ARCHITECTURE "Open items").
+    const since = environment.latestDeployment.createdAt;
     try {
       const errors = await observability.recentErrors({
         workerName,
@@ -63,7 +64,9 @@ export const environmentRoutes = new Hono<Env>()
       return c.json({ workerName, since: since.toISOString(), errors });
     } catch (error) {
       if (error instanceof ObservabilityError) {
-        return c.json({ error: "Could not reach Cloudflare's Telemetry API" }, 502);
+        return error.kind === "auth"
+          ? c.json({ error: "Observability credentials were rejected" }, 503)
+          : c.json({ error: "Could not reach Cloudflare's Telemetry API" }, 502);
       }
       throw error;
     }

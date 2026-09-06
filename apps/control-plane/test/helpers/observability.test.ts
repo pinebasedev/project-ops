@@ -116,13 +116,20 @@ describe("createTelemetryClient.recentErrors", () => {
     ]);
   });
 
-  it("throws ObservabilityError on a non-2xx response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("nope", { status: 403 }));
-    const client = createTelemetryClient({ apiToken: "t", accountId: "a", fetch: fetchMock });
+  it("flags a 401/403 as an auth failure, other non-2xx as upstream", async () => {
+    const client = (status: number) =>
+      createTelemetryClient({
+        apiToken: "t",
+        accountId: "a",
+        fetch: vi.fn().mockResolvedValue(new Response("nope", { status })),
+      });
 
-    await expect(client.recentErrors({ workerName: "w", from, to })).rejects.toBeInstanceOf(
-      ObservabilityError,
-    );
+    await expect(client(403).recentErrors({ workerName: "w", from, to })).rejects.toMatchObject({
+      kind: "auth",
+    });
+    await expect(client(500).recentErrors({ workerName: "w", from, to })).rejects.toMatchObject({
+      kind: "upstream",
+    });
   });
 
   it("throws ObservabilityError when the fetch itself fails", async () => {

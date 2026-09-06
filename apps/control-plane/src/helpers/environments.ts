@@ -1,9 +1,19 @@
-import { desc } from "drizzle-orm";
-import { deployments, type Deployment, type Environment } from "../db/schema";
+import { desc, eq } from "drizzle-orm";
+import type { Database } from "../db/client";
+import { deployments, environments, type Deployment, type Environment } from "../db/schema";
 
 export type EnvironmentWithLatestDeployment = Environment & {
   latestDeployment: Deployment | null;
 };
+
+// The single Environment lookup both `/environments/:id` routes need: the row
+// plus its most recent Deployment, or `undefined` when the id is unknown.
+export function findEnvironmentWithLatestDeployment(db: Database, id: string) {
+  return db.query.environments.findFirst({
+    where: eq(environments.id, id),
+    with: withLatestDeployment,
+  });
+}
 
 // Relational-query fragment shared by both query routes: fetch only an
 // Environment's most recent Deployment. `createdAt` is second-granularity, so

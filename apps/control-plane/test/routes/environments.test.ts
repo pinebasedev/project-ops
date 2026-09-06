@@ -243,4 +243,16 @@ describe("GET /v1/environments/:id/errors", () => {
     const res = await app.request("/v1/environments/env-1/errors");
     expect(res.status).toBe(502);
   });
+
+  it("returns 503 when the Telemetry API rejects the credentials", async () => {
+    const db = await createTestDb();
+    await seed(db);
+    const recentErrors = vi
+      .fn()
+      .mockRejectedValue(new ObservabilityError("bad token", { kind: "auth" }));
+    const app = createApp({ db, observability: { recentErrors } });
+
+    const res = await app.request("/v1/environments/env-1/errors");
+    expect(res.status).toBe(503);
+  });
 });

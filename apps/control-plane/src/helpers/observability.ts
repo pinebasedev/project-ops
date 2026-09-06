@@ -24,13 +24,18 @@ export interface ObservabilityClient {
   recentErrors(query: RecentErrorsQuery): Promise<ObservedError[]>;
 }
 
-// Thrown for any failure talking to the Telemetry API (network error, non-2xx).
-// The errors route turns this into a 502 rather than a 500, since it's an
-// upstream-dependency failure, not a bug here.
+// Thrown for any failure talking to the Telemetry API. `kind` splits the two
+// cases the errors route handles differently:
+//   - "auth": Cloudflare rejected our credentials (401/403) — a control-plane
+//     misconfiguration, surfaced as 503 "not configured" like a missing token.
+//   - "upstream": network error or any other non-2xx — a dependency outage,
+//     surfaced as 502. Never a 500: it isn't a bug here.
 export class ObservabilityError extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
+  readonly kind: "auth" | "upstream";
+  constructor(message: string, options?: { kind?: "auth" | "upstream"; cause?: unknown }) {
+    super(message, { cause: options?.cause });
     this.name = "ObservabilityError";
+    this.kind = options?.kind ?? "upstream";
   }
 }
 
@@ -71,6 +76,12 @@ type TelemetryEnvelope = {
  * A live {@link ObservabilityClient} backed by Cloudflare's Workers Observability
  * Telemetry API (`POST /accounts/{id}/workers/observability/telemetry/query`).
  * `fetch` is injectable for tests.
+ *
+ * The request/response shape (`queryId`, `view`, `timeframe` in epoch ms,
+ * `parameters.filters` as `{key,type,operation,value}`, `result.events.events[]`)
+ * follows the `cloudflare` TypeScript SDK's `TelemetryQueryParams` /
+ * `TelemetryQueryResponse`. It is exercised against a live account for the first
+ * time in Phase 6 (P6-06) — see ADR-0004.
  */
 export function createTelemetryClient(config: {
   apiToken: string;
@@ -113,6 +124,14 @@ export function createTelemetryClient(config: {
         throw new ObservabilityError("Failed to reach the Telemetry API", { cause });
       }
 
+      if (response.status === 401 || response.status === 403) {
+        throw new ObservabilityError(
+          `Telemetry API rejected the credentials (${response.status})`,
+          {
+            kind: "auth",
+          },
+        );
+      }
       if (!response.ok) {
         throw new ObservabilityError(`Telemetry API responded ${response.status}`);
       }
