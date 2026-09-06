@@ -8,7 +8,3 @@ dist/
 *.log
 .vite/
 .svelte-kit/
-
-# one-off P1-09 setup wizard (see /wizard) — delete both once Phase 1 is closed
-/scripts/close-p1-09.sh
-/scripts/.close-p1-09.env
