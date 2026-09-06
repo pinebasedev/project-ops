@@ -60,10 +60,18 @@ be deployed and behind Access before an external CI run can exercise it.
 
 ## Phase 4 — Promotion + Production
 
-- [ ] **P4-01** `feat(db)` `Environment.kind` gains `production`; extend the Alchemy stack with stage `prod`, including the destroy safety guard.
-- [ ] **P4-02** `feat(ci)` *(demo-project repo)* Merging `staging` → `main` triggers an Alchemy deploy of stage `prod`; callback reports the production Deployment.
-- [ ] **P4-03** `feat(dashboard)` Production status view: "what commit is currently running in production?"
-- [ ] **P4-04** `feat(dashboard)` Deployment diff link-out: given two Deployments, link to GitHub's compare view using their commit SHAs (ADR-0007).
+The dashboard half of this phase (P4-03, P4-04) lands here. The demo-project
+half — `Environment.kind` gaining `production` in practice, the Alchemy `prod`
+stage with its destroy guard, and the CI that deploys it on `staging` → `main`
+(P4-01 remainder, P4-02) — is **deferred to run for real only after Phase 6**,
+alongside P6-06: the same reasoning as the P3-01/P3-02 deferral (see sequencing
+assumptions), plus the platform it reports to must be deployed and behind Access
+before an external CI run can exercise it.
+
+- [ ] **P4-01** `feat(db)` `Environment.kind` gains `production`; extend the Alchemy stack with stage `prod`, including the destroy safety guard. *(Control-plane side needs nothing — `kind` already carries `production` and the query/dashboard paths now exercise it. Remaining: the demo-project Alchemy `prod` stage + destroy guard, a real deploy — deferred to Phase 6.)*
+- [ ] **P4-02** `feat(ci)` *(demo-project repo)* Merging `staging` → `main` triggers an Alchemy deploy of stage `prod`; callback reports the production Deployment. *(Deferred to Phase 6 — needs the deployed, Access-gated control plane. The production Deployment goes through the same create/`complete` callback routes as staging; no new control-plane route needed.)*
+- [x] **P4-03** `feat(dashboard)` Production status view: "what commit is currently running in production?" *(`/projects/:id/production`, linked from the project page. Read-only — promotion is a git merge, not a dashboard action (ADR-0002). No Integration Test panel; those run only against staging (ADR-0006).)*
+- [x] **P4-04** `feat(dashboard)` Deployment diff link-out: given two Deployments, link to GitHub's compare view using their commit SHAs (ADR-0007). *(Adds a nullable `projects.github_repo` slug (`feat(api)`) — the data the compare URL needs. The link lives on the staging view as "compare with production — what promotion would ship", `github.com/{owner}/{repo}/compare/{prod}...{staging}`. `githubCompareUrl` hides it when the slug or a commit is missing, or the two commits match.)*
 
 ## Phase 5 — Observability
 
