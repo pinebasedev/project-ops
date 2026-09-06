@@ -155,8 +155,7 @@ export function createTelemetryClient(config: {
 /**
  * Builds a client from the Worker bindings, or null when either credential is
  * absent. Async because `CLOUDFLARE_API_TOKEN` may be a Secrets Store binding
- * read with `.get()` when deployed (P6-04); locally it's a plain `.dev.vars`
- * string.
+ * read with `.get()` when deployed (P6-04); locally it's a plain string.
  */
 export async function observabilityFromEnv(
   env: Partial<Bindings> | undefined,

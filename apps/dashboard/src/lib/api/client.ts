@@ -2,9 +2,10 @@ import { env } from "$env/dynamic/public";
 import type { AppType } from "control-plane/app";
 import { hc } from "hono/client";
 
-// The control-plane API base URL. Baked in at build time from
-// PUBLIC_CONTROL_PLANE_URL; defaults to the local `vite dev` port of the
-// control-plane worker (see its wrangler.jsonc / dev script).
+// The control-plane API base URL. `alchemy dev` / `alchemy deploy` wire the real
+// URL in as PUBLIC_CONTROL_PLANE_URL (see `alchemy.run.ts`); the fallback is the
+// control-plane's pinned local port (`dev: { port: 9003 }` there), for a
+// standalone `vite dev` of just this app.
 const baseUrl = env.PUBLIC_CONTROL_PLANE_URL ?? "http://localhost:9003";
 
 /**

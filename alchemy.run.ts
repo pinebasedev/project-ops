@@ -39,6 +39,7 @@ export default Alchemy.Stack(
     const dev = yield* ALCHEMY_DEV;
     const database = yield* Database;
     const accessTeamDomain = yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team");
+    const cloudflareAccountId = stringOr("CLOUDFLARE_ACCOUNT_ID", "dev-account");
 
     // Secrets Store: deploy-only (the store provider reads the real account even
     // in local mode). Locally the token is a plain `secret_text` binding.
@@ -64,11 +65,15 @@ export default Alchemy.Stack(
     const controlPlane = yield* Cloudflare.Worker("control-plane", {
       main: "./apps/control-plane/src/index.ts",
       compatibility: { flags: ["nodejs_compat"], date: "2026-09-05" },
+      // Pin the local port so the dashboard's `$env/dynamic/public` fallback in
+      // `apps/dashboard/src/lib/api/client.ts` stays correct for a standalone
+      // `vite dev`; under `alchemy dev` the real URL is wired through instead.
+      dev: { port: 9003 },
       ...(access ? { access: access.application } : {}),
       env: {
         DB: database,
         CLOUDFLARE_API_TOKEN: apiToken,
-        CLOUDFLARE_ACCOUNT_ID: stringOr("CLOUDFLARE_ACCOUNT_ID", "dev-account"),
+        CLOUDFLARE_ACCOUNT_ID: cloudflareAccountId,
         CF_ACCESS_TEAM_DOMAIN: accessTeamDomain,
         ...(access ? { CF_ACCESS_AUD: access.application.aud } : {}),
       },

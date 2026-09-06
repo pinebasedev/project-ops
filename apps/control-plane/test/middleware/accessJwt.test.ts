@@ -6,14 +6,12 @@ import {
   accessJwtConfigFromEnv,
   createAccessJwtMiddleware,
 } from "../../src/middleware/accessJwt";
-import { generateKeypair, signAccessToken, type Keypair } from "../helpers/accessJwt";
-
-const AUD = "test-aud-tag";
+import { generateKeypair, signAccessToken, TEST_AUD, type Keypair } from "../helpers/accessJwt";
 
 /** A tiny app that gates everything behind the middleware under test. */
 function gatedApp(keys: Keypair["publicJwk"][]) {
   const app = new Hono<Env>();
-  app.use("*", createAccessJwtMiddleware({ teamDomain: "pinebase", aud: AUD, keys }));
+  app.use("*", createAccessJwtMiddleware({ teamDomain: "pinebase", aud: TEST_AUD, keys }));
   app.get("/whoami", (c) => c.json({ email: c.get("accessJwt")?.email ?? null }));
   return app;
 }
@@ -81,7 +79,10 @@ describe("createAccessJwtMiddleware", () => {
     const jwks = JSON.stringify({ keys: [keypair.publicJwk] });
     const fetchMock = vi.fn().mockResolvedValue(new Response(jwks, { status: 200 }));
     const app = new Hono<Env>();
-    app.use("*", createAccessJwtMiddleware({ teamDomain: "pinebase", aud: AUD, fetch: fetchMock }));
+    app.use(
+      "*",
+      createAccessJwtMiddleware({ teamDomain: "pinebase", aud: TEST_AUD, fetch: fetchMock }),
+    );
     app.get("/whoami", (c) => c.json({ ok: true }));
 
     const token = await signAccessToken(keypair.privateJwk);

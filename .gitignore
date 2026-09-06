@@ -2,10 +2,7 @@ node_modules/
 dist/
 .alchemy/
 .wrangler/
-.dev.vars
-.dev.vars.*
-!.dev.vars.example
-# Captured values from scripts/phase-6-deploy.sh; also read by `alchemy deploy`.
+# Local config + captured values from scripts/phase-6-deploy.sh; read by Alchemy.
 .env
 .env.*
 !.env.example

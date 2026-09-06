@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import { ACCESS_JWT_HEADER } from "../src/middleware/accessJwt";
-import { generateKeypair, signAccessToken, type Keypair } from "./helpers/accessJwt";
+import { generateKeypair, signAccessToken, TEST_AUD, type Keypair } from "./helpers/accessJwt";
 import { createTestDb } from "./helpers/db";
 
 describe("createApp", () => {
@@ -49,7 +49,7 @@ describe("createApp with the Access gate enabled", () => {
   const gated = async () =>
     createApp({
       db: await createTestDb(),
-      accessJwt: { teamDomain: "pinebase", aud: "aud-tag", keys: [keypair.publicJwk] },
+      accessJwt: { teamDomain: "pinebase", aud: TEST_AUD, keys: [keypair.publicJwk] },
     });
 
   it("leaves /v1/health reachable without an assertion", async () => {
@@ -63,7 +63,7 @@ describe("createApp with the Access gate enabled", () => {
   });
 
   it("admits a request carrying a valid assertion", async () => {
-    const token = await signAccessToken(keypair.privateJwk, {}, { aud: "aud-tag" });
+    const token = await signAccessToken(keypair.privateJwk);
     const res = await (
       await gated()
     ).request("/v1/environments/does-not-exist", {

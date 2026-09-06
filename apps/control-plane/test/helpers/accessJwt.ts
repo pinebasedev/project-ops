@@ -4,6 +4,9 @@ import type { HonoJsonWebKey } from "hono/utils/jwt/types";
 // Shared RSA-key + token helpers for the Access-JWT tests. Cloudflare Access
 // signs RS256 tokens against the team JWKS; these stand in for that offline.
 
+/** The Access application audience the helpers sign for, unless overridden. */
+export const TEST_AUD = "test-aud-tag";
+
 export type Keypair = { publicJwk: HonoJsonWebKey; privateJwk: HonoJsonWebKey };
 
 export async function generateKeypair(kid = "key-1"): Promise<Keypair> {
@@ -30,7 +33,7 @@ export async function generateKeypair(kid = "key-1"): Promise<Keypair> {
 export function signAccessToken(
   privateJwk: HonoJsonWebKey,
   claims: Record<string, unknown> = {},
-  { teamDomain = "pinebase", aud = "test-aud-tag" }: { teamDomain?: string; aud?: string } = {},
+  { teamDomain = "pinebase", aud = TEST_AUD }: { teamDomain?: string; aud?: string } = {},
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   return Jwt.sign(

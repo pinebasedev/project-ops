@@ -1,8 +1,8 @@
 // A binding that carries a secret value can arrive two ways: a plain string
-// (local `.dev.vars`) or a Cloudflare Secrets Store binding whose value is read
-// at runtime with `.get()` (deployed — the control-plane's `CLOUDFLARE_API_TOKEN`
-// lives in Secrets Store per ADR-0005 / P6-04). `resolveSecret` flattens both to
-// a string, treating empty as absent.
+// (local dev — root `.env` or an `alchemy dev` fallback) or a Cloudflare Secrets
+// Store binding whose value is read at runtime with `.get()` (deployed — the
+// control-plane's `CLOUDFLARE_API_TOKEN` lives in Secrets Store per ADR-0005 /
+// P6-04). `resolveSecret` flattens both to a string, treating empty as absent.
 //
 // Structural, not `@cloudflare/workers-types`' `SecretsStoreSecret`: `env.ts`
 // flows into the dashboard's typed RPC client, whose tsconfig doesn't load the

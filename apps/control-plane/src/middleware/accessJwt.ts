@@ -30,7 +30,10 @@ export type AccessJwtConfig = {
  * the isolate's lifetime, so steady-state requests verify without a round trip.
  */
 export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHandler<Env> {
-  const jwksUri = `https://${config.teamDomain}.cloudflareaccess.com/cdn-cgi/access/certs`;
+  // The team's Zero Trust origin: the `iss` every token must carry, and the host
+  // its signing keys are published under.
+  const teamOrigin = `https://${config.teamDomain}.cloudflareaccess.com`;
+  const jwksUri = `${teamOrigin}/cdn-cgi/access/certs`;
   const doFetch = config.fetch ?? fetch;
   let cache: { keys: HonoJsonWebKey[]; expiresAt: number } | undefined;
 
@@ -52,10 +55,7 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
     try {
       const payload = await Jwt.verifyWithJwks(token, {
         keys: await keys(),
-        verification: {
-          aud: config.aud,
-          iss: `https://${config.teamDomain}.cloudflareaccess.com`,
-        },
+        verification: { aud: config.aud, iss: teamOrigin },
         allowedAlgorithms: ["RS256"],
       });
       c.set("accessJwt", payload);
@@ -70,7 +70,7 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
 /**
  * Builds the middleware config from the Worker bindings, or null when either
  * value is absent — local `alchemy dev` runs ungated (mirrors
- * `observabilityFromEnv`); deployed stacks always set both (P6-04).
+ * `observabilityFromEnv`); deployed stacks always set both (ADR-0009).
  */
 export function accessJwtConfigFromEnv(
   env: Partial<Bindings> | undefined,
