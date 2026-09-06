@@ -97,6 +97,18 @@ export function githubCompareUrl(
 }
 
 /**
+ * A telemetry event timestamp (ISO-8601, off the wire) rendered as a fixed
+ * `YYYY-MM-DD HH:MM:SS UTC` string — stable regardless of the viewer's locale or
+ * timezone, which matters when comparing an error's time to a deployment's.
+ * Returns the input untouched if it doesn't parse.
+ */
+export function formatEventTimestamp(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return `${date.toISOString().slice(0, 19).replace("T", " ")} UTC`;
+}
+
+/**
  * How to title an environment in the UI: its PR number when a deployment has
  * recorded one, otherwise the Alchemy stage name as a fallback.
  */

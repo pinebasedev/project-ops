@@ -1,4 +1,5 @@
 import { api } from "$lib/api/client";
+import { loadRecentErrors } from "$lib/api/loadRecentErrors";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 
@@ -19,5 +20,11 @@ export const load: PageLoad = async ({ params }) => {
     throw error(404, "Environment not found");
   }
 
-  return { projectId: params.projectId, environment: body };
+  return {
+    projectId: params.projectId,
+    environment: body,
+    // Streamed, not awaited: the errors panel hangs off a live Telemetry query
+    // (ADR-0004) that can be slow or unavailable, and shouldn't hold up the page.
+    recentErrors: loadRecentErrors(params.environmentId),
+  };
 };
