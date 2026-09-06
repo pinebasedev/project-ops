@@ -7,7 +7,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      // Placeholder — replace with the real id from `wrangler d1 create control-plane` (P1-09).
+      // Placeholder for local dev. The deployed database is provisioned by
+      // Alchemy in Phase 6 (P6-01) — the control plane is not deployed before then.
       "database_name": "control-plane",
       "database_id": "local-dev",
       "migrations_dir": "./migrations",
