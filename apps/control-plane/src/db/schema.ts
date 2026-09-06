@@ -41,6 +41,14 @@ export const deployments = sqliteTable("deployments", {
   commitSha: text("commit_sha").notNull(),
   prNumber: integer("pr_number"),
   previewUrl: text("preview_url"),
+  // Aggregate Integration Test outcome for this Deployment, reported by the
+  // managed project's CI after the live suite runs against staging. Counts only,
+  // plus a link to the Actions run — no per-test detail (ADR-0007). Null until
+  // results are reported (and always null for ephemeral Deployments, which don't
+  // run Integration Tests — ADR-0006).
+  integrationTestsPassed: integer("integration_tests_passed"),
+  integrationTestsFailed: integer("integration_tests_failed"),
+  integrationTestsRunUrl: text("integration_tests_run_url"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
