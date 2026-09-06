@@ -18,10 +18,14 @@
 	<h1 class="mt-2 text-2xl font-semibold text-foreground">{data.project.name}</h1>
 	<div class="mt-1 flex items-center justify-between gap-4">
 		<p class="text-sm text-muted-foreground">Ephemeral environments, one per pull request.</p>
-		<a
-			href="/projects/{data.project.id}/staging"
-			class="shrink-0 text-sm text-primary hover:underline">Staging status &rarr;</a
-		>
+		<div class="flex shrink-0 gap-4 text-sm">
+			<a href="/projects/{data.project.id}/staging" class="text-primary hover:underline"
+				>Staging status &rarr;</a
+			>
+			<a href="/projects/{data.project.id}/production" class="text-primary hover:underline"
+				>Production status &rarr;</a
+			>
+		</div>
 	</div>
 
 	{#if environments.length === 0}
