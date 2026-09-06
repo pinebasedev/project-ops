@@ -1,9 +1,15 @@
 import { Hono } from "hono";
+import type { MiddlewareHandler } from "hono";
 import { createDb, type Database } from "./db/client";
 import type { Env } from "./env";
 import { notFound, onError } from "./helpers/errors";
 import { observabilityFromEnv, type ObservabilityClient } from "./helpers/observability";
 import { requestIdMiddleware, secureHeadersMiddleware } from "./middleware";
+import {
+  accessJwtConfigFromEnv,
+  createAccessJwtMiddleware,
+  type AccessJwtConfig,
+} from "./middleware/accessJwt";
 import { routes } from "./routes";
 
 export type AppOverrides = {
@@ -13,6 +19,9 @@ export type AppOverrides = {
   // Injected in tests as a fake, or as `null` to exercise the not-configured
   // path. In production it's built per-request from the Cloudflare API bindings.
   observability?: ObservabilityClient | null;
+  // Injected in tests (with `keys`), or `null` to force the Access gate off.
+  // Absent → built from the `CF_ACCESS_*` bindings; null when they're unset.
+  accessJwt?: AccessJwtConfig | null;
 };
 
 export function createApp(overrides: AppOverrides = {}) {
@@ -20,6 +29,21 @@ export function createApp(overrides: AppOverrides = {}) {
 
   app.use("*", requestIdMiddleware);
   app.use("*", secureHeadersMiddleware);
+
+  // Cloudflare Access perimeter (ADR-0005, P6-03). Verifies the edge-supplied
+  // JWT server-side on every `/v1` request except the health probe. Resolved
+  // once per isolate: injected config in tests, the `CF_ACCESS_*` bindings in
+  // production, or `null` (ungated) for local `alchemy dev`.
+  let accessGate: MiddlewareHandler<Env> | null | undefined;
+  app.use("/v1/*", async (c, next) => {
+    if (c.req.path === "/v1/health") return next();
+    if (accessGate === undefined) {
+      const cfg = "accessJwt" in overrides ? overrides.accessJwt : accessJwtConfigFromEnv(c.env);
+      accessGate = cfg ? createAccessJwtMiddleware(cfg) : null;
+    }
+    return accessGate ? accessGate(c, next) : next();
+  });
+
   app.use("*", async (c, next) => {
     c.set("db", overrides.db ?? createDb(c.env.DB));
     c.set(
