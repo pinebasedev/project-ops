@@ -62,6 +62,8 @@ The control-plane API runs locally via `@cloudflare/vite-plugin`, which runs the
 
 The dashboard is a client-rendered SPA (`@sveltejs/adapter-static`, `ssr` disabled) deployed as a Cloudflare Workers assets-only site — it has no server-side Worker code to run, so `@cloudflare/vite-plugin` doesn't apply to it. `vite dev` covers local development; `wrangler dev` against the built `dist/` previews the real asset-serving and SPA-fallback behavior before deploy.
 
+Deploys, from Phase 6 on, go through Alchemy (`alchemy.run.ts` + `alchemy/`, [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)) — but local development stays on `@cloudflare/vite-plugin` / `vite dev` as above. Alchemy is deploy-only here, because the stack declares Cloudflare Access resources that can't be planned without a connected account.
+
 ## Tooling & repository conventions
 
 - Monorepo: pnpm workspaces, `apps/*` + `packages/*` — layout inspired by Svelteflare's structure, not its tooling.

@@ -2,6 +2,9 @@ packages:
   - 'apps/*'
 allowBuilds:
   esbuild: true
+  # Optional native accelerator for msgpackr (pulled in transitively by alchemy).
+  # The pure-JS path is used instead — no build step needed.
+  msgpackr-extract: false
   workerd: true
 minimumReleaseAgeExclude:
   - hono@4.13.7

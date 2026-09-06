@@ -1,6 +1,6 @@
 # Provision infrastructure with Alchemy, driven from GitHub Actions, using remote Cloudflare-backed state
 
-Status: accepted
+Status: accepted — extended by [ADR-0009](./0009-platform-self-provisioning-stack.md) for the platform's own infra
 
 We provision all Cloudflare infrastructure (Workers, D1, Durable Objects, KV, etc.) per Project/Environment using Alchemy, executed directly from GitHub Actions workflows in each managed project's own repository — not from the control-plane Worker itself. State is stored via Alchemy's `Cloudflare.state()` (a dedicated state-store Worker + Secrets Store on the Cloudflare account) rather than a local JSON file, since GitHub-hosted runners have no persistent filesystem between runs. We adopt Alchemy's documented stage-naming convention directly: `pr-{number}` for ephemeral PR environments, `staging` and `prod` for the persistent ones.
 
@@ -11,3 +11,7 @@ Running Alchemy from inside the control-plane Worker was considered so the platf
 ## Consequences
 
 Alchemy is pre-1.0 (`v2.0.0-beta.x` at time of writing) — expect API churn and pin an explicit version rather than tracking `latest`.
+
+## Update (2026-09, Phase 6)
+
+Current Alchemy (`2.0.0-beta.76`) turned out to be a fully Effect-based framework that owns build/dev/deploy, not the thin "point at your build output" provisioner this ADR was written against. The decision holds — Alchemy, GitHub-Actions-driven, remote state, `pr-{number}`/`staging`/`prod` stages — but the specifics of the platform provisioning *itself* (one stack, deploy-only, coexisting with `@cloudflare/vite-plugin` for local dev) are recorded separately in [ADR-0009](./0009-platform-self-provisioning-stack.md). Managed projects still follow this ADR as written.
