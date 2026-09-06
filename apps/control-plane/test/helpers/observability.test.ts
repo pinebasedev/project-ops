@@ -18,15 +18,23 @@ describe("workerServiceName", () => {
 });
 
 describe("observabilityFromEnv", () => {
-  it("returns null unless both the token and the account id are set", () => {
-    expect(observabilityFromEnv(undefined)).toBeNull();
-    expect(observabilityFromEnv({ CLOUDFLARE_API_TOKEN: "t" })).toBeNull();
-    expect(observabilityFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a" })).toBeNull();
+  it("returns null unless both the token and the account id are set", async () => {
+    expect(await observabilityFromEnv(undefined)).toBeNull();
+    expect(await observabilityFromEnv({ CLOUDFLARE_API_TOKEN: "t" })).toBeNull();
+    expect(await observabilityFromEnv({ CLOUDFLARE_ACCOUNT_ID: "a" })).toBeNull();
   });
 
-  it("builds a client when both are present", () => {
-    const client = observabilityFromEnv({
+  it("builds a client when both are present", async () => {
+    const client = await observabilityFromEnv({
       CLOUDFLARE_API_TOKEN: "t",
+      CLOUDFLARE_ACCOUNT_ID: "a",
+    });
+    expect(client).not.toBeNull();
+  });
+
+  it("reads the token from a Secrets Store binding when deployed", async () => {
+    const client = await observabilityFromEnv({
+      CLOUDFLARE_API_TOKEN: { get: () => Promise.resolve("from-store") },
       CLOUDFLARE_ACCOUNT_ID: "a",
     });
     expect(client).not.toBeNull();

@@ -9,9 +9,10 @@ export type Bindings = {
   // Cloudflare API token + account, used only to query the Workers Observability
   // Telemetry API for an Environment's recent errors (ADR-0004). Optional: the
   // errors route degrades to a "not configured" response when either is absent.
-  // Local dev reads these from `.dev.vars`; deployed environments read them from
-  // Cloudflare Secrets Store (Phase 6, P6-04).
-  CLOUDFLARE_API_TOKEN?: string;
+  // The token is a plain `.dev.vars` string locally and a Secrets Store binding
+  // (read with `.get()`, see `helpers/secrets.ts`) when deployed (P6-04); the
+  // account id is a plain string either way.
+  CLOUDFLARE_API_TOKEN?: string | SecretsStoreSecret;
   CLOUDFLARE_ACCOUNT_ID?: string;
   // Cloudflare Access: the Zero Trust team subdomain and the control-plane
   // application's AUD tag. When both are set the Worker verifies the

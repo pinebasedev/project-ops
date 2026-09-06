@@ -1,4 +1,5 @@
 import type { Bindings } from "../env";
+import { resolveSecret } from "./secrets";
 
 // One flattened error line, distilled from a Telemetry API event. The control
 // plane stores nothing — this is what the errors route returns and immediately
@@ -151,13 +152,16 @@ export function createTelemetryClient(config: {
   };
 }
 
-/** Builds a client from the Worker bindings, or null when either credential is absent. */
-export function observabilityFromEnv(
+/**
+ * Builds a client from the Worker bindings, or null when either credential is
+ * absent. Async because `CLOUDFLARE_API_TOKEN` may be a Secrets Store binding
+ * read with `.get()` when deployed (P6-04); locally it's a plain `.dev.vars`
+ * string.
+ */
+export async function observabilityFromEnv(
   env: Partial<Bindings> | undefined,
-): ObservabilityClient | null {
-  if (!env?.CLOUDFLARE_API_TOKEN || !env.CLOUDFLARE_ACCOUNT_ID) return null;
-  return createTelemetryClient({
-    apiToken: env.CLOUDFLARE_API_TOKEN,
-    accountId: env.CLOUDFLARE_ACCOUNT_ID,
-  });
+): Promise<ObservabilityClient | null> {
+  const apiToken = await resolveSecret(env?.CLOUDFLARE_API_TOKEN);
+  if (!apiToken || !env?.CLOUDFLARE_ACCOUNT_ID) return null;
+  return createTelemetryClient({ apiToken, accountId: env.CLOUDFLARE_ACCOUNT_ID });
 }

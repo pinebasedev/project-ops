@@ -50,7 +50,7 @@ export function createApp(overrides: AppOverrides = {}) {
       "observability",
       "observability" in overrides
         ? (overrides.observability ?? null)
-        : observabilityFromEnv(c.env),
+        : await observabilityFromEnv(c.env),
     );
     await next();
   });
