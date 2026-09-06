@@ -21,12 +21,15 @@ export function createApp(overrides: AppOverrides = {}) {
     await next();
   });
 
-  app.route("/v1", routes());
+  // Keep the routed app's type on the return value — the dashboard derives its
+  // typed RPC client (`hc<AppType>()`) from it, so the route/response types have
+  // to survive `.route()` rather than being widened away.
+  const app_ = app.route("/v1", routes());
 
-  app.notFound(notFound);
-  app.onError(onError);
+  app_.notFound(notFound);
+  app_.onError(onError);
 
-  return app;
+  return app_;
 }
 
 export type AppType = ReturnType<typeof createApp>;

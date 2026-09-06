@@ -1,3 +1,4 @@
+import type { D1Database } from "@cloudflare/workers-types";
 import type { Database } from "./db/client";
 import type { Project } from "./db/schema";
 
