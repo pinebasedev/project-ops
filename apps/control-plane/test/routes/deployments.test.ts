@@ -127,6 +127,120 @@ describe("POST /v1/deployments/:id/complete", () => {
   });
 });
 
+describe("POST /v1/deployments/:id/integration-results", () => {
+  const results = { passed: 11, failed: 0, runUrl: "https://github.com/acme/app/actions/runs/42" };
+
+  it("records the aggregate Integration Test outcome", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(results),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      integrationTestsPassed: 11,
+      integrationTestsFailed: 0,
+      integrationTestsRunUrl: results.runUrl,
+    });
+  });
+
+  it("records a failing suite", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...results, passed: 9, failed: 2 }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      integrationTestsPassed: 9,
+      integrationTestsFailed: 2,
+    });
+  });
+
+  it("rejects requests without a valid project token", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(results),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a negative or non-integer count", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...results, failed: -1 }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a non-URL run link", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...results, runUrl: "not-a-url" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 when a different project tries to report results", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+
+    const other = await seedProject(db);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${other.token}` },
+      body: JSON.stringify(results),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 404 for an unknown deployment", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const app = createApp({ db });
+
+    const res = await app.request("/v1/deployments/nope/integration-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(results),
+    });
+    expect(res.status).toBe(404);
+  });
+});
+
 describe("GET /v1/deployments/:id", () => {
   it("returns a deployment without requiring auth", async () => {
     const db = await createTestDb();
