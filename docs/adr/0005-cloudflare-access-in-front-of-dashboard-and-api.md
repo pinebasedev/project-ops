@@ -1,6 +1,6 @@
 # Cloudflare Access protects both the dashboard and the API, provisioned as code
 
-Status: accepted
+Status: accepted — see the Phase 6 update below on the dashboard IdP
 
 Both the dashboard and the control-plane API sit behind Cloudflare Access (Zero Trust). The Access application, policy, and service tokens are declared as Alchemy resources in the same stack that provisions the rest of the project (`Cloudflare.Access.Application`, `Access.Policy`, `Access.Group`, `Access.ServiceToken`) — not a manual, skippable step taken separately in Cloudflare's dashboard. This makes Access mandatory for anyone deploying this project: `alchemy deploy` will not stand up a reachable, working system without it.
 
@@ -13,3 +13,7 @@ This sits entirely on top of, and independent from, the per-project bearer token
 ## Consequences
 
 Every managed project's GitHub Actions workflow needs two more repo secrets (`CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`) alongside `CLOUDFLARE_API_TOKEN` and `IDP_PROJECT_TOKEN` — four total. Anyone self-hosting this project needs a Cloudflare Zero Trust org (free tier covers small user counts); this is now a hard dependency of the project, not an optional hardening step.
+
+## Update (2026-09, Phase 6)
+
+The dashboard IdP is **Google**, not GitHub as written above — GitHub was a placeholder before the org existed, and the founder's identity is a Google account. The allow-list is a single email (`CF_ACCESS_ALLOW_EMAIL`, defaulting to the founder's) rather than an email domain or group. Everything else holds. The concrete stack — `alchemy/Access.ts` + `alchemy.run.ts` — and the deploy procedure are covered by [ADR-0009](./0009-platform-self-provisioning-stack.md).

@@ -19,7 +19,9 @@ export type Bindings = {
   // application's AUD tag. When both are set the Worker verifies the
   // `Cf-Access-Jwt-Assertion` header on every `/v1` request except `/v1/health`
   // (ADR-0005, P6-03); when either is absent it runs ungated, for local
-  // `alchemy dev`. Local `.dev.vars`; deployed from Secrets Store (P6-04).
+  // `alchemy dev`. Plain bindings, not secrets — a `.dev.vars` string locally,
+  // and on deploy `CF_ACCESS_AUD` comes from the Access application resource and
+  // `CF_ACCESS_TEAM_DOMAIN` from deploy config (ADR-0009).
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
 };

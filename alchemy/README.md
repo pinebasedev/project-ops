@@ -32,6 +32,10 @@ Unknowns that only a real deploy settles:
 
 - **`Website.SvelteKit`** swaps the dashboard's `@sveltejs/adapter-static` for
   Alchemy's in-memory Cloudflare adapter — untested against this app.
+- **Base-URL injection** — the dashboard reads `PUBLIC_CONTROL_PLANE_URL` via
+  `$env/dynamic/public`; a static SPA inlines that at build time. If
+  `Website.SvelteKit`'s `env` only reaches the runtime and not the build, the
+  bundle keeps its `http://localhost:9003` fallback.
 - **Secrets Store binding shape** — the control-plane reads
   `CLOUDFLARE_API_TOKEN` as a plain string locally and expects a
   `SecretsStoreSecret` (`.get()`) when deployed (`helpers/secrets.ts` handles

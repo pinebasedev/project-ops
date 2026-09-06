@@ -1,7 +1,6 @@
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
-import * as Redacted from "effect/Redacted";
+import { redactedOr } from "./config.ts";
 
 /**
  * The control-plane's own operational secret — the Cloudflare API token it uses
@@ -19,8 +18,6 @@ import * as Redacted from "effect/Redacted";
  */
 export const controlPlaneApiToken = Effect.gen(function* () {
   const store = yield* Cloudflare.SecretsStore.Store("idp-secrets");
-  const value = yield* Config.redacted("CLOUDFLARE_API_TOKEN").pipe(
-    Config.withDefault(Redacted.make("dev-only-cloudflare-api-token")),
-  );
+  const value = yield* redactedOr("CLOUDFLARE_API_TOKEN", "dev-only-cloudflare-api-token");
   return yield* Cloudflare.SecretsStore.Secret("CLOUDFLARE_API_TOKEN", { store, value });
 });

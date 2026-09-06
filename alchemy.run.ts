@@ -1,11 +1,11 @@
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Output from "alchemy/Output";
-import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { accessResources } from "./alchemy/Access.ts";
+import { stringOr } from "./alchemy/config.ts";
 import { Database } from "./alchemy/Db.ts";
 import { controlPlaneApiToken } from "./alchemy/Secrets.ts";
 
@@ -34,12 +34,8 @@ export default Alchemy.Stack(
 
     // UUID of the Google identity provider configured in the Zero Trust org.
     // Supplied via the deploy wizard; the dev fallback keeps `alchemy dev` happy.
-    const googleIdpId = yield* Config.string("CF_GOOGLE_IDP_ID").pipe(
-      Config.withDefault("dev-google-idp"),
-    );
-    const accessTeamDomain = yield* Config.string("CF_ACCESS_TEAM_DOMAIN").pipe(
-      Config.withDefault("dev-team"),
-    );
+    const googleIdpId = yield* stringOr("CF_GOOGLE_IDP_ID", "dev-google-idp");
+    const accessTeamDomain = yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team");
 
     // Explicit application (rather than the inline `access: { policies }` form)
     // so its AUD tag can be wired back into the Worker for server-side JWT
@@ -58,9 +54,7 @@ export default Alchemy.Stack(
       env: {
         DB: database,
         CLOUDFLARE_API_TOKEN: apiToken,
-        CLOUDFLARE_ACCOUNT_ID: Config.string("CLOUDFLARE_ACCOUNT_ID").pipe(
-          Config.withDefault("dev-account"),
-        ),
+        CLOUDFLARE_ACCOUNT_ID: stringOr("CLOUDFLARE_ACCOUNT_ID", "dev-account"),
         CF_ACCESS_TEAM_DOMAIN: accessTeamDomain,
         CF_ACCESS_AUD: controlPlaneApp.aud,
       },

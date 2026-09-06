@@ -16,6 +16,7 @@ CLOUDFLARE_ACCOUNT_ID=
 # (`<team>.cloudflareaccess.com`) and the control-plane Access application's
 # audience (AUD) tag. When both are set, every `/v1` request except `/v1/health`
 # must carry a valid `Cf-Access-Jwt-Assertion`; leave them blank to run the
-# Worker ungated for local development. Deployed from Secrets Store (P6-04).
+# Worker ungated for local development. Plain bindings when deployed (not
+# secrets) — the stack fills them in from the Access application (ADR-0009).
 CF_ACCESS_TEAM_DOMAIN=
 CF_ACCESS_AUD=

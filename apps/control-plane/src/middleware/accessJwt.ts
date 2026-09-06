@@ -7,7 +7,7 @@ import { unauthorizedJson } from "../helpers/errors";
 // Cloudflare Access puts the signed identity assertion here, as a bare JWT with
 // no `Bearer` prefix — so `hono/jwk` (which insists on `Authorization: Bearer`)
 // doesn't fit; we drive `Jwt.verifyWithJwks` directly.
-const ACCESS_JWT_HEADER = "Cf-Access-Jwt-Assertion";
+export const ACCESS_JWT_HEADER = "Cf-Access-Jwt-Assertion";
 const JWKS_TTL_MS = 60 * 60 * 1000;
 
 export type AccessJwtConfig = {
@@ -52,7 +52,10 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
     try {
       const payload = await Jwt.verifyWithJwks(token, {
         keys: await keys(),
-        verification: { aud: config.aud },
+        verification: {
+          aud: config.aud,
+          iss: `https://${config.teamDomain}.cloudflareaccess.com`,
+        },
         allowedAlgorithms: ["RS256"],
       });
       c.set("accessJwt", payload);
@@ -71,7 +74,7 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
  */
 export function accessJwtConfigFromEnv(
   env: Partial<Bindings> | undefined,
-): { teamDomain: string; aud: string } | null {
+): Pick<AccessJwtConfig, "teamDomain" | "aud"> | null {
   if (!env?.CF_ACCESS_TEAM_DOMAIN || !env.CF_ACCESS_AUD) return null;
   return { teamDomain: env.CF_ACCESS_TEAM_DOMAIN, aud: env.CF_ACCESS_AUD };
 }

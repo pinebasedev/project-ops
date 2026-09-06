@@ -9,6 +9,7 @@
   "scripts": {
     "deploy": "alchemy deploy",
     "destroy": "alchemy destroy",
+    "check": "pnpm -r --if-present run typecheck && pnpm -r --if-present run check && pnpm run check:alchemy",
     "lint": "oxlint apps alchemy alchemy.run.ts",
     "lint:fix": "oxlint apps alchemy alchemy.run.ts --fix",
     "format": "oxfmt --write apps alchemy alchemy.run.ts",
