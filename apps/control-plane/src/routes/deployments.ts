@@ -111,8 +111,15 @@ export const deploymentRoutes = new Hono<Env>()
       const db = c.get("db");
       const id = c.req.param("id");
 
-      if (!(await findOwnedDeployment(db, id, c.get("project").id))) {
+      const deployment = await findOwnedDeployment(db, id, c.get("project").id);
+      if (!deployment) {
         return notFoundJson(c);
+      }
+      // Integration Tests run only against staging (ADR-0006). Reject results
+      // aimed at an ephemeral/production Deployment rather than silently
+      // recording them — keeps the "always null for ephemeral" invariant real.
+      if (deployment.environment.kind !== "staging") {
+        return c.json({ error: "Integration Test results are only recorded for staging" }, 409);
       }
 
       await db

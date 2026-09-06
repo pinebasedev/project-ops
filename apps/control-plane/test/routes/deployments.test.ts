@@ -130,17 +130,20 @@ describe("POST /v1/deployments/:id/complete", () => {
 describe("POST /v1/deployments/:id/integration-results", () => {
   const results = { passed: 11, failed: 0, runUrl: "https://github.com/acme/app/actions/runs/42" };
 
+  const report = (app: ReturnType<typeof createApp>, id: string, token: string, body: unknown) =>
+    app.request(`/v1/deployments/${id}/integration-results`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+
   it("records the aggregate Integration Test outcome", async () => {
     const db = await createTestDb();
     const { token } = await seedProject(db);
-    const deploymentId = await createInProgressDeployment(db, token);
     const app = createApp({ db });
+    const deploymentId = await createStagingDeployment(app, token);
 
-    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(results),
-    });
+    const res = await report(app, deploymentId, token, results);
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
@@ -153,14 +156,10 @@ describe("POST /v1/deployments/:id/integration-results", () => {
   it("records a failing suite", async () => {
     const db = await createTestDb();
     const { token } = await seedProject(db);
-    const deploymentId = await createInProgressDeployment(db, token);
     const app = createApp({ db });
+    const deploymentId = await createStagingDeployment(app, token);
 
-    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ...results, passed: 9, failed: 2 }),
-    });
+    const res = await report(app, deploymentId, token, { ...results, passed: 9, failed: 2 });
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
@@ -172,8 +171,8 @@ describe("POST /v1/deployments/:id/integration-results", () => {
   it("rejects requests without a valid project token", async () => {
     const db = await createTestDb();
     const { token } = await seedProject(db);
-    const deploymentId = await createInProgressDeployment(db, token);
     const app = createApp({ db });
+    const deploymentId = await createStagingDeployment(app, token);
 
     const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
       method: "POST",
@@ -186,44 +185,42 @@ describe("POST /v1/deployments/:id/integration-results", () => {
   it("rejects a negative or non-integer count", async () => {
     const db = await createTestDb();
     const { token } = await seedProject(db);
-    const deploymentId = await createInProgressDeployment(db, token);
     const app = createApp({ db });
+    const deploymentId = await createStagingDeployment(app, token);
 
-    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ...results, failed: -1 }),
-    });
+    const res = await report(app, deploymentId, token, { ...results, failed: -1 });
     expect(res.status).toBe(400);
   });
 
   it("rejects a non-URL run link", async () => {
     const db = await createTestDb();
     const { token } = await seedProject(db);
-    const deploymentId = await createInProgressDeployment(db, token);
     const app = createApp({ db });
+    const deploymentId = await createStagingDeployment(app, token);
 
-    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ...results, runUrl: "not-a-url" }),
-    });
+    const res = await report(app, deploymentId, token, { ...results, runUrl: "not-a-url" });
     expect(res.status).toBe(400);
+  });
+
+  it("rejects results aimed at a non-staging deployment", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const app = createApp({ db });
+    const ephemeralId = await createInProgressDeployment(db, token);
+
+    const res = await report(app, ephemeralId, token, results);
+    expect(res.status).toBe(409);
   });
 
   it("returns 404 when a different project tries to report results", async () => {
     const db = await createTestDb();
     const { token } = await seedProject(db);
-    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+    const deploymentId = await createStagingDeployment(app, token);
 
     const other = await seedProject(db);
-    const app = createApp({ db });
 
-    const res = await app.request(`/v1/deployments/${deploymentId}/integration-results`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${other.token}` },
-      body: JSON.stringify(results),
-    });
+    const res = await report(app, deploymentId, other.token, results);
     expect(res.status).toBe(404);
   });
 
@@ -232,11 +229,7 @@ describe("POST /v1/deployments/:id/integration-results", () => {
     const { token } = await seedProject(db);
     const app = createApp({ db });
 
-    const res = await app.request("/v1/deployments/nope/integration-results", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(results),
-    });
+    const res = await report(app, "nope", token, results);
     expect(res.status).toBe(404);
   });
 });
@@ -266,6 +259,15 @@ async function createInProgressDeployment(db: Database, token: string) {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ stageName: "pr-42", kind: "ephemeral", commitSha: "abc123" }),
+  });
+  return ((await res.json()) as { deploymentId: string }).deploymentId;
+}
+
+async function createStagingDeployment(app: ReturnType<typeof createApp>, token: string) {
+  const res = await app.request("/v1/deployments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ stageName: "staging", kind: "staging", commitSha: "abc123" }),
   });
   return ((await res.json()) as { deploymentId: string }).deploymentId;
 }
