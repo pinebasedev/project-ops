@@ -5,7 +5,7 @@ Full implementation sequence, in build order. Each ticket is sized to be roughly
 **Sequencing assumptions, made explicit:**
 - **The control-plane API and dashboard are never deployed until Phase 6.** The platform provisions its own infra there (P6-01) and it goes up already behind Cloudflare Access (P6-02) — there is no window where a public, unauthenticated control-plane exists on the internet. Phases 1–5 develop and test them locally: the control-plane via `@cloudflare/vite-plugin` and its unit suite, the dashboard via `vite dev` against a locally-run control-plane.
 - Cloudflare Access and self-provisioning-via-Alchemy (ADR-0005) are deliberately last, not woven through every earlier phase — building the functional loop first, hardening once it works, avoids re-testing everything through an auth layer while the design is still moving.
-- **Consequence**: the CI → control-plane callback (P1-08) and its later extensions (P3-04, P4-02) are written and unit-tested in their own phases but only exercised end to end by the final check (P6-06), since GitHub Actions can't reach a local control-plane. The managed project's own Alchemy provisioning (P1-06 onward) still involves real Cloudflare deploys throughout — that's inherent to proving provisioning works, and is unaffected.
+- **Consequence**: the CI → control-plane callback (P1-08) and its later extensions (P3-04, P4-02) are written and unit-tested in their own phases but only exercised end to end by the final check (P6-06), since GitHub Actions can't reach a local control-plane. The same applies to the demo-project CI and live Integration Test suite (P3-02, P3-03) and the remaining Alchemy stages (P3-01, P4-01): coded in-phase where practical, but the real deploys and live runs happen after Phase 6, once the platform they report to is deployed and Access-gated. The managed project's own Alchemy provisioning (P1-06 onward) still involves real Cloudflare deploys throughout — that's inherent to proving provisioning works, and is unaffected.
 - Managed-project tickets (marked below) happen in `/Users/stefan/Code/Pinebase/demo-project` — a copy of the Svelteflare boilerplate used as the platform's first managed Project — not this repo.
 
 ---
@@ -45,9 +45,16 @@ per-environment deployment state, which lives on the `Deployment` row.
 
 ## Phase 3 — Staging + Integration Tests
 
-- [ ] **P3-01** `feat(db)` `Environment.kind` gains `staging` in practice; extend demo-project's Alchemy stack with stage `staging`. *(Control-plane side needs nothing — `kind` already carries `staging` and the query/dashboard paths now exercise it. Remaining: the demo-project Alchemy `staging` stage, a real deploy.)*
-- [ ] **P3-02** `feat(ci)` *(demo-project repo)* Merging a PR into `staging` triggers an Alchemy deploy of stage `staging` and destroys the merged PR's `pr-{number}` stage.
-- [ ] **P3-03** `test(integration)` *(demo-project repo)* The actual Integration Test suite — runs once, live, against the deployed staging URL (ADR-0006).
+The control-plane half of this phase (P3-04, P3-05) lands here. The demo-project
+half — the Alchemy `staging` stage, the CI that drives it, and the live
+Integration Test suite (P3-01 remainder, P3-02, P3-03) — is **deferred to run for
+real only after Phase 6**, alongside P6-06: the same reasoning as the P1-08
+callback leg (see sequencing assumptions), plus the platform it reports to must
+be deployed and behind Access before an external CI run can exercise it.
+
+- [ ] **P3-01** `feat(db)` `Environment.kind` gains `staging` in practice; extend demo-project's Alchemy stack with stage `staging`. *(Control-plane side needs nothing — `kind` already carries `staging` and the query/dashboard paths now exercise it. Remaining: the demo-project Alchemy `staging` stage, a real deploy — deferred to Phase 6.)*
+- [ ] **P3-02** `feat(ci)` *(demo-project repo)* Merging a PR into `staging` triggers an Alchemy deploy of stage `staging` and destroys the merged PR's `pr-{number}` stage. *(Deferred to Phase 6 — needs the deployed, Access-gated control plane.)*
+- [ ] **P3-03** `test(integration)` *(demo-project repo)* The actual Integration Test suite — runs once, live, against the deployed staging URL (ADR-0006). *(Deferred to Phase 6, with P6-06.)*
 - [x] **P3-04** `feat(api)` Extend the callback payload with the aggregate integration-test result (pass/fail counts) + Actions run URL — no per-test detail (ADR-0007). *(New route `POST /v1/deployments/:id/integration-results` — separate from `/complete` since the live suite runs after the deploy is already `done`. Adds `integration_tests_passed` / `_failed` / `_run_url` to the `deployments` table.)*
 - [x] **P3-05** `feat(dashboard)` Staging status view: current Deployment + Integration Test result, prominent — this is what stops someone promoting a broken staging (ADR-0006's consequence, since promotion itself is ungated). *(`/projects/:id/staging`, linked from the project page. Integration Test panel turns red on failure.)*
 
