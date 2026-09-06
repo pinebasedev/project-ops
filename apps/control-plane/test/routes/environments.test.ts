@@ -66,6 +66,35 @@ describe("GET /v1/projects/:projectId/environments", () => {
     expect(withoutDeployment?.latestDeployment).toBeNull();
   });
 
+  it("breaks a same-second createdAt tie deterministically", async () => {
+    const db = await createTestDb();
+    await seed(db);
+    const sameSecond = new Date("2026-02-01T00:00:00Z");
+    await db.insert(deployments).values([
+      {
+        id: "dep-tie-a",
+        environmentId: "env-3",
+        status: "done",
+        commitSha: "t1",
+        createdAt: sameSecond,
+        updatedAt: sameSecond,
+      },
+      {
+        id: "dep-tie-b",
+        environmentId: "env-3",
+        status: "done",
+        commitSha: "t2",
+        createdAt: sameSecond,
+        updatedAt: sameSecond,
+      },
+    ]);
+    const app = createApp({ db });
+
+    const res = await app.request("/v1/projects/proj-1/environments");
+    const body = (await res.json()) as { id: string; latestDeployment: { id: string } | null }[];
+    expect(body.find((e) => e.id === "env-3")?.latestDeployment?.id).toBe("dep-tie-b");
+  });
+
   it("filters by kind", async () => {
     const db = await createTestDb();
     await seed(db);

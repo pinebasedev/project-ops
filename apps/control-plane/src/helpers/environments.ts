@@ -1,15 +1,26 @@
-import type { Deployment, Environment } from "../db/schema";
+import { desc } from "drizzle-orm";
+import { deployments, type Deployment, type Environment } from "../db/schema";
 
 export type EnvironmentWithLatestDeployment = Environment & {
   latestDeployment: Deployment | null;
 };
 
-// Both query routes fetch an Environment's deployments newest-first, limit 1,
-// then collapse that to a single `latestDeployment` field (or null). This keeps
-// the embedded shape identical across the list and get-by-id responses.
+// Relational-query fragment shared by both query routes: fetch only an
+// Environment's most recent Deployment. `createdAt` is second-granularity, so
+// `id` is a deterministic (if arbitrary) tie-breaker for same-second redeploys.
+export const withLatestDeployment = {
+  deployments: {
+    orderBy: [desc(deployments.createdAt), desc(deployments.id)],
+    limit: 1,
+  },
+};
+
+// Collapse the `deployments` array (0 or 1 rows) that `withLatestDeployment`
+// produces into a single `latestDeployment` field, so the list and get-by-id
+// responses share one shape.
 export function flattenLatestDeployment(
   environment: Environment & { deployments: Deployment[] },
 ): EnvironmentWithLatestDeployment {
-  const { deployments, ...rest } = environment;
-  return { ...rest, latestDeployment: deployments[0] ?? null };
+  const { deployments: rows, ...rest } = environment;
+  return { ...rest, latestDeployment: rows[0] ?? null };
 }

@@ -2,10 +2,10 @@ import { zValidator } from "@hono/zod-validator";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { deployments, environmentKinds, environments, projects } from "../db/schema";
+import { environmentKinds, environments, projects } from "../db/schema";
 import type { Env } from "../env";
 import { isUniqueConstraintError } from "../helpers/dbErrors";
-import { flattenLatestDeployment } from "../helpers/environments";
+import { flattenLatestDeployment, withLatestDeployment } from "../helpers/environments";
 import { mintToken } from "../helpers/tokens";
 
 const registerSchema = z.object({ name: z.string().min(1) });
@@ -43,12 +43,7 @@ export const projectRoutes = new Hono<Env>()
       where: kind
         ? and(eq(environments.projectId, projectId), eq(environments.kind, kind))
         : eq(environments.projectId, projectId),
-      with: {
-        deployments: {
-          orderBy: [desc(deployments.createdAt)],
-          limit: 1,
-        },
-      },
+      with: withLatestDeployment,
     });
 
     return c.json(rows.map(flattenLatestDeployment));
