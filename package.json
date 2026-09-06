@@ -9,8 +9,8 @@
   "scripts": {
     "deploy": "alchemy deploy",
     "destroy": "alchemy destroy",
-    "lint": "oxlint apps",
-    "lint:fix": "oxlint apps --fix",
+    "lint": "oxlint apps alchemy alchemy.run.ts",
+    "lint:fix": "oxlint apps alchemy alchemy.run.ts --fix",
     "format": "oxfmt --write apps alchemy alchemy.run.ts",
     "format:check": "oxfmt --check apps alchemy alchemy.run.ts",
     "check:alchemy": "tsc -p tsconfig.alchemy.json",

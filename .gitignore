@@ -5,6 +5,10 @@ dist/
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
+# Captured values from scripts/phase-6-deploy.sh; also read by `alchemy deploy`.
+.env
+.env.*
+!.env.example
 .DS_Store
 *.log
 .vite/
