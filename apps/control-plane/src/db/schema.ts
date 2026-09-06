@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const environmentKinds = ["ephemeral", "staging", "production"] as const;
@@ -48,6 +48,16 @@ export const deployments = sqliteTable("deployments", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+// Only the relation actually queried (deployment -> its environment, for the
+// ownership check in routes/deployments.ts) — no reverse/many relations until
+// a route needs one.
+export const deploymentsRelations = relations(deployments, ({ one }) => ({
+  environment: one(environments, {
+    fields: [deployments.environmentId],
+    references: [environments.id],
+  }),
+}));
 
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
