@@ -6,7 +6,7 @@ Full implementation sequence, in build order. Each ticket is sized to be roughly
 - Phase 1 proves Alchemy PR-stage provisioning and the control-plane API's logic independently (mostly local, via `@cloudflare/vite-plugin` and manual `alchemy deploy`/`destroy`) before connecting them for real — a bare `wrangler deploy` of the control-plane API only happens at the very end of Phase 1, purely so GitHub Actions has something reachable to call.
 - Cloudflare Access and self-provisioning-via-Alchemy for the platform's own infra (ADR-0005) are deliberately last (Phase 6), not woven through every earlier phase — building the functional loop first, hardening once it works, avoids re-testing everything through an auth layer while the design is still moving.
 - **Known trade-off from that ordering**: between Phase 1's bare deploy and Phase 6, the control-plane API and dashboard are reachable without Access — writes still require the per-project bearer token (unaffected by this ordering), but dashboard reads are not yet gated. Accepted: the project isn't actually put into real use until every phase, including Phase 6, is implemented — the intermediate deploys exist only to close each phase's loop during development, not as a running service anyone relies on.
-- Svelteflare-repo tickets (marked below) happen in `/Users/stefan/Code/Pinebase/svelteflare`, not this repo.
+- Managed-project tickets (marked below) happen in `/Users/stefan/Code/Pinebase/demo-project` — a copy of the Svelteflare boilerplate used as the platform's first managed Project — not this repo.
 
 ---
 
@@ -27,10 +27,12 @@ Full implementation sequence, in build order. Each ticket is sized to be roughly
 - [x] **P1-03** `feat(control-plane)` Project registration — a route or script to create a `Project` row and mint its token. (Dashboard UI for this can wait; a raw POST or CLI script is enough for now.)
 - [x] **P1-04** `feat(api)` Deployment callback routes: `POST` to mark a Deployment `in_progress`, and to mark it `done`/`failed` with commit SHA, PR number, preview URL.
 - [x] **P1-05** `feat(api)` Query routes: list Environments (filterable by `kind`), get an Environment, get a Deployment.
-- [ ] **P1-06** `feat(alchemy)` *(Svelteflare repo)* `alchemy.run.ts` provisioning stage `pr-{number}`, remote state via `Cloudflare.state()`, a `GitHub.Comment` resource posting the preview URL. Prove it manually first — `alchemy deploy --stage pr-test`, then `destroy` — before wiring to Actions.
-- [ ] **P1-07** `feat(ci)` *(Svelteflare repo)* GitHub Actions: the two-job pattern from Alchemy's CI guide (deploy job on `pull_request`, cleanup job on `pull_request: closed` with the prod-destroy safety guard). New commits redeploy the same stage.
-- [ ] **P1-08** `feat(integration)` *(Svelteflare repo)* Wire the callback into the workflow: after `alchemy deploy`/`destroy`, `POST` status to the control-plane API using the per-project token from a repo secret.
-- [ ] **P1-09** `feat(infra)` Bare `wrangler deploy` of the control-plane API (no Access yet) — just enough to be reachable. Close the loop for real against Svelteflare: open a PR, confirm provisioning + recording + preview comment, merge, confirm destruction.
+- [x] **P1-06** `feat(alchemy)` *(demo-project repo)* `alchemy.run.ts` provisioning stage `pr-{number}`, remote state via `Cloudflare.state()`, a `GitHub.Comment` resource posting the preview URL. Prove it manually first — `alchemy deploy --stage pr-test`, then `destroy` — before wiring to Actions. *(Code written + typecheck + `alchemy dev` parse; manual deploy proof still pending — see P1-09. Scope: api Worker + D1 only; web SvelteKit resource scaffolded, not wired.)*
+- [x] **P1-07** `feat(ci)` *(demo-project repo)* GitHub Actions: the two-job pattern from Alchemy's CI guide (deploy job on `pull_request`, cleanup job on `pull_request: closed` with the prod-destroy safety guard). New commits redeploy the same stage. *(`.github/workflows/preview.yml`.)*
+- [x] **P1-08** `feat(integration)` *(demo-project repo)* Wire the callback into the workflow: after `alchemy deploy`/`destroy`, `POST` status to the control-plane API using the per-project token from a repo secret. *(Deploy callback done — register/complete/failed. No destroy callback: the API has no "destroyed" Deployment status.)*
+- [ ] **P1-09** `feat(infra)` Bare `wrangler deploy` of the control-plane API (no Access yet) — just enough to be reachable. Close the loop for real against demo-project: open a PR, confirm provisioning + recording + preview comment, merge, confirm destruction.
+
+> **Alchemy note (2026-09):** current Alchemy is `2.0.0-beta.76`, a fully Effect-based framework — not the thin "point at your build output" provisioner ADR-0001 was written against. It works (the api deploys via Alchemy's async-handler shape, no rewrite), but the dep tree is heavy (`effect@4-rc`, `drizzle@1-rc`, `rolldown`) and the SvelteKit path needs app-level adapter changes. Worth revisiting ADR-0001 before Phase 6's self-provisioning.
 
 ## Phase 2 — Dashboard: view active environments
 
