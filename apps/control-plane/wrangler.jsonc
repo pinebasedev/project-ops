@@ -4,4 +4,13 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-05",
   "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      // Placeholder — replace with the real id from `wrangler d1 create control-plane` (P1-09).
+      "database_name": "control-plane",
+      "database_id": "local-dev",
+      "migrations_dir": "./migrations",
+    },
+  ],
 }

@@ -1,17 +1,25 @@
 import { Hono } from "hono";
+import { createDb, type Database } from "./db/client";
+import type { Env } from "./env";
 import { notFound, onError } from "./helpers/errors";
 import { requestIdMiddleware, secureHeadersMiddleware } from "./middleware";
 import { routes } from "./routes";
 
-// Later phases inject dependencies here (e.g. a db client for tests);
-// the parameter exists now so callers already go through the factory.
-export type AppOverrides = Record<string, never>;
+export type AppOverrides = {
+  // Injected directly in tests; in production each request builds its own
+  // db from the D1 binding, since the binding only exists per-request.
+  db?: Database;
+};
 
-export function createApp(_overrides: AppOverrides = {}) {
-  const app = new Hono();
+export function createApp(overrides: AppOverrides = {}) {
+  const app = new Hono<Env>();
 
   app.use("*", requestIdMiddleware);
   app.use("*", secureHeadersMiddleware);
+  app.use("*", async (c, next) => {
+    c.set("db", overrides.db ?? createDb(c.env.DB));
+    await next();
+  });
 
   app.route("/v1", routes());
 
