@@ -75,9 +75,9 @@ before an external CI run can exercise it.
 
 ## Phase 5 — Observability
 
-- [ ] **P5-01** `feat(observability)` Control-plane's own Cloudflare API token for querying the Workers Observability Telemetry API — `.dev.vars` locally for now (Secrets Store lands in Phase 6).
-- [ ] **P5-02** `feat(observability)` Query route: given an Environment, call Cloudflare's Telemetry API filtered by Worker + time range (ADR-0004).
-- [ ] **P5-03** `feat(dashboard)` Recent-errors view: errors for an Environment since its latest Deployment. Answers "what errors appeared after the latest production deployment?"
+- [x] **P5-01** `feat(observability)` Control-plane's own Cloudflare API token for querying the Workers Observability Telemetry API — `.dev.vars` locally for now (Secrets Store lands in Phase 6). *(`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` bindings + `.dev.vars.example`. `observabilityFromEnv` builds the client, or null when either is unset — the query route then 503s "not configured". Needs the "Workers Observability Write" token permission.)*
+- [x] **P5-02** `feat(observability)` Query route: given an Environment, call Cloudflare's Telemetry API filtered by Worker + time range (ADR-0004). *(`GET /v1/environments/:id/errors` — `POST …/telemetry/query` filtered by `$metadata.service` = `<project>-<stage>` (convention, see ADR-0004 notes), `$metadata.level=error`, window from the latest Deployment's `created_at`. Unauthenticated like the sibling read routes. Nothing stored. Upstream failure → 502; no deployment yet → `{ since: null, errors: [] }`. The `ObservabilityClient` seam is injected in tests; the real end-to-end run waits for Phase 6.)*
+- [x] **P5-03** `feat(dashboard)` Recent-errors view: errors for an Environment since its latest Deployment. Answers "what errors appeared after the latest production deployment?" *(Section on the Environment detail page, streamed (not awaited) from the loader so a slow/unavailable Telemetry query never blocks the page. Degrades to a notice on "not configured" / "unavailable" rather than erroring.)*
 
 ## Phase 6 — Harden: Access + self-provisioning + first real deploy
 
