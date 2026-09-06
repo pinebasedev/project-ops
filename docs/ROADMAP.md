@@ -34,9 +34,13 @@ Full implementation sequence, in build order. Each ticket is sized to be roughly
 
 ## Phase 2 — Dashboard: view active environments
 
-- [ ] **P2-01** `feat(dashboard)` Typed RPC client: import the control-plane's Hono `AppType`, wrap in `hc<AppType>()`.
-- [ ] **P2-02** `feat(dashboard)` Environments list view: active ephemeral Environments for a Project (PR number, preview URL, status, commit SHA). Answers "which PR environments are currently active?"
-- [ ] **P2-03** `feat(dashboard)` Deployment detail view: an Environment's latest Deployment (status, commit).
+Also added here (not separately ticketed): `GET /v1/projects` and an embedded
+`latestDeployment` on the environment query routes — the list/detail views need
+per-environment deployment state, which lives on the `Deployment` row.
+
+- [x] **P2-01** `feat(dashboard)` Typed RPC client: import the control-plane's Hono `AppType`, wrap in `hc<AppType>()`.
+- [x] **P2-02** `feat(dashboard)` Environments list view: active ephemeral Environments for a Project (PR number, preview URL, status, commit SHA). Answers "which PR environments are currently active?"
+- [x] **P2-03** `feat(dashboard)` Deployment detail view: an Environment's latest Deployment (status, commit).
 
 ## Phase 3 — Staging + Integration Tests
 
