@@ -38,14 +38,16 @@ export function statusPresentation(status: string | undefined | null): StatusPre
 export type IntegrationTestPresentation = StatusPresentation & {
   /** True once a result has been reported — lets the view show it prominently. */
   reported: boolean;
-  /** True only when a result is reported and every test passed. */
-  passing: boolean;
+  /** True only when a result is reported and at least one test failed. This is
+   * the load-bearing "don't promote" signal (ADR-0006) — never true for a
+   * not-yet-reported result, so the view doesn't cry wolf on a fresh redeploy. */
+  failing: boolean;
 };
 
 /**
  * How to summarise a Deployment's aggregate Integration Test outcome. The
  * control plane stores counts only, not per-test detail (ADR-0007), so this is
- * "N of M failing" / "all M passing" / "not run yet" plus a pill colour.
+ * "N of M failing" / "All M passing" / "Not run" plus a pill colour.
  * `passed`/`failed` are read off the wire and may be null (never run) or, in
  * theory, absent — treated the same as "not reported".
  */
@@ -57,7 +59,7 @@ export function integrationTestPresentation(deployment: {
   const failed = deployment.integrationTestsFailed;
 
   if (passed == null || failed == null) {
-    return { label: "Not run", badgeClass: NEUTRAL_BADGE, reported: false, passing: false };
+    return { label: "Not run", badgeClass: NEUTRAL_BADGE, reported: false, failing: false };
   }
 
   const total = passed + failed;
@@ -66,14 +68,14 @@ export function integrationTestPresentation(deployment: {
       label: `${failed} of ${total} failing`,
       badgeClass: KNOWN_STATUSES.failed.badgeClass,
       reported: true,
-      passing: false,
+      failing: true,
     };
   }
   return {
-    label: total === 1 ? "1 test passing" : `all ${total} passing`,
+    label: total === 1 ? "1 test passing" : `All ${total} passing`,
     badgeClass: KNOWN_STATUSES.done.badgeClass,
     reported: true,
-    passing: true,
+    failing: false,
   };
 }
 

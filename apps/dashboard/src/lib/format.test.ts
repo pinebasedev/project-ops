@@ -33,12 +33,12 @@ describe("statusPresentation", () => {
 });
 
 describe("integrationTestPresentation", () => {
-  it("reports 'not run' when no result has been recorded", () => {
+  it("reports 'not run' when no result has been recorded, and never flags it as failing", () => {
     const p = integrationTestPresentation({
       integrationTestsPassed: null,
       integrationTestsFailed: null,
     });
-    expect(p).toMatchObject({ label: "Not run", reported: false, passing: false });
+    expect(p).toMatchObject({ label: "Not run", reported: false, failing: false });
   });
 
   it("treats an absent count the same as null", () => {
@@ -50,7 +50,7 @@ describe("integrationTestPresentation", () => {
       integrationTestsPassed: 12,
       integrationTestsFailed: 0,
     });
-    expect(p).toMatchObject({ label: "all 12 passing", reported: true, passing: true });
+    expect(p).toMatchObject({ label: "All 12 passing", reported: true, failing: false });
   });
 
   it("summarises a failing suite as a fraction of the total", () => {
@@ -58,7 +58,7 @@ describe("integrationTestPresentation", () => {
       integrationTestsPassed: 9,
       integrationTestsFailed: 2,
     });
-    expect(p).toMatchObject({ label: "2 of 11 failing", reported: true, passing: false });
+    expect(p).toMatchObject({ label: "2 of 11 failing", reported: true, failing: true });
   });
 
   it("singularises a one-test suite", () => {

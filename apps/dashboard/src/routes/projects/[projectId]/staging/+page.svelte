@@ -7,6 +7,8 @@
 
 	let deployment = $derived(data.environment?.latestDeployment ?? null);
 	let integrationTests = $derived(deployment ? integrationTestPresentation(deployment) : null);
+	// Reported and at least one test failed — the "don't promote" state.
+	let failing = $derived(integrationTests?.failing === true);
 </script>
 
 <div class="mx-auto max-w-2xl px-6 py-10">
@@ -28,15 +30,15 @@
 	{:else}
 		<section
 			class="mt-8 rounded-lg border p-5"
-			class:border-border={integrationTests?.passing !== false}
-			class:bg-card={integrationTests?.passing !== false}
-			class:border-red-300={integrationTests?.passing === false}
-			class:bg-red-50={integrationTests?.passing === false}
-			class:dark:border-red-900={integrationTests?.passing === false}
-			class:dark:bg-red-950={integrationTests?.passing === false}
+			class:border-border={!failing}
+			class:bg-card={!failing}
+			class:border-red-300={failing}
+			class:bg-red-50={failing}
+			class:dark:border-red-900={failing}
+			class:dark:bg-red-950={failing}
 		>
 			<h2 class="text-sm font-medium text-muted-foreground">Integration Tests</h2>
-			<p class="mt-2 flex items-center gap-3">
+			<p class="mt-2">
 				<span class="rounded-full px-2.5 py-1 text-sm font-medium {integrationTests?.badgeClass}">
 					{integrationTests?.label}
 				</span>
