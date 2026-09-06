@@ -7,6 +7,7 @@
   },
   "packageManager": "pnpm@11.21.0",
   "scripts": {
+    "dev": "alchemy dev",
     "deploy": "alchemy deploy",
     "destroy": "alchemy destroy",
     "check": "pnpm -r --if-present run typecheck && pnpm -r --if-present run check && pnpm run check:alchemy",

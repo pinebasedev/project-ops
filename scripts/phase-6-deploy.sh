@@ -184,18 +184,25 @@ finish() {
 # Replace the example below. Set TOTAL_STAGES to match the stages you write.
 # ──────────────────────────────────────────────────────────────────────────
 
-TOTAL_STAGES=6
+TOTAL_STAGES=7
 
 # Persist captured values at the repo root .env (gitignored). Alchemy reads it.
 ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
 
 banner "Phase 6 — deploy the platform behind Cloudflare Access"
 
-# ── Stage 1: Cloudflare account + API token ───────────────────────────────
+# ── Stage 1: Alchemy identity ─────────────────────────────────────────────
+stage "Connect Alchemy to Cloudflare"
+say "One-time OAuth sign-in, cached to ~/.alchemy — the same idea as"
+say "'wrangler login'. This is also what 'pnpm dev' (alchemy dev) needs; it"
+say "authenticates you but changes nothing on the account."
+pause "Run 'pnpm alchemy login' in another terminal, finish the browser flow, then Enter."
+
+# ── Stage 2: Cloudflare account + API token ───────────────────────────────
 stage "Cloudflare: account ID + API token"
-say "Alchemy needs an account ID and a token to stand up Workers, D1, Access,"
-say "and the Secrets Store. This token is also what the control-plane uses to"
-say "query Workers Observability (ADR-0004), so it lands in the Secrets Store."
+say "The deploy also needs a scoped API token (login alone isn't enough for the"
+say "Access + Secrets Store providers). This token is also what the control-plane"
+say "uses to query Workers Observability (ADR-0004), so it lands in Secrets Store."
 open_url "https://dash.cloudflare.com/?to=/:account/workers-and-pages"
 step "Copy the Account ID from the right-hand sidebar (32 hex characters)."
 ask CLOUDFLARE_ACCOUNT_ID "Paste the account ID:"
@@ -211,7 +218,7 @@ ask_secret CLOUDFLARE_API_TOKEN "Paste the API token:"
 write_env CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
 write_env CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
 
-# ── Stage 2: Zero Trust org + Google IdP ──────────────────────────────────
+# ── Stage 3: Zero Trust org + Google IdP ──────────────────────────────────
 stage "Cloudflare Zero Trust: team + Google login"
 say "The dashboard sits behind an interactive Google login; the API behind a"
 say "service token. Both live in your Zero Trust organization."
@@ -234,12 +241,11 @@ ask CF_GOOGLE_IDP_ID "Paste the Google IdP UUID:"
 write_env CF_ACCESS_TEAM_DOMAIN "$CF_ACCESS_TEAM_DOMAIN"
 write_env CF_GOOGLE_IDP_ID "$CF_GOOGLE_IDP_ID"
 
-# ── Stage 3: deploy the platform ──────────────────────────────────────────
+# ── Stage 4: deploy the platform ──────────────────────────────────────────
 stage "Deploy: alchemy deploy"
 say "Stands up: control-plane Worker, dashboard, D1 (+ migrations), the Access"
 say "application + service token, and the Secrets Store entry."
-note "Alchemy reads the .env this wizard just wrote. If it asks you to log in,"
-note "run 'pnpm alchemy login' in another terminal, then continue."
+note "Alchemy reads the .env this wizard just wrote, plus your ~/.alchemy login."
 warn "The first deploy bootstraps the remote state store — approve the one prompt."
 warn "Not yet proven end to end (ADR-0009) — watch for adapter / binding errors."
 pause "Run 'pnpm alchemy deploy' now in another terminal. Enter when it finishes."
@@ -257,7 +263,7 @@ write_env DASHBOARD_URL "$DASHBOARD_URL"
 write_env CF_ACCESS_CLIENT_ID "$CF_ACCESS_CLIENT_ID"
 write_env CF_ACCESS_CLIENT_SECRET "$CF_ACCESS_CLIENT_SECRET"
 
-# ── Stage 4: register demo-project, mint its token ────────────────────────
+# ── Stage 5: register demo-project, mint its token ────────────────────────
 stage "Register the managed project"
 say "demo-project needs its own per-project bearer token (P1-02/03). We register"
 say "it against the deployed control-plane, through the Access perimeter."
@@ -278,7 +284,7 @@ else
 fi
 write_env IDP_PROJECT_TOKEN "$IDP_PROJECT_TOKEN"
 
-# ── Stage 5: demo-project repo secrets ────────────────────────────────────
+# ── Stage 6: demo-project repo secrets ────────────────────────────────────
 stage "Set demo-project's GitHub secrets"
 say "preview.yml (P6-05) sends the Access service token + bearer token on every"
 say "callback. Setting them on $DEMO_REPO now."
@@ -300,7 +306,7 @@ else
   SKIPPED+=("demo-project repo secrets/variable — see commands above")
 fi
 
-# ── Stage 6: end-to-end verification (P6-06) ──────────────────────────────
+# ── Stage 7: end-to-end verification (P6-06) ──────────────────────────────
 stage "Verify the whole chain (P6-06)"
 say "Open a real PR on demo-project and follow it through:"
 step "Push a branch and open a PR against 'staging'."

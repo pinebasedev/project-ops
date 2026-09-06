@@ -3,32 +3,41 @@
 `../alchemy.run.ts` + this folder describe the **platform's own** Cloudflare
 infrastructure — the control-plane API, the dashboard, their D1 database, the
 Cloudflare Access perimeter, and the control-plane's Secrets Store entry
-(Phase 6, P6-01/02/04). [Alchemy](https://alchemy.run) owns the deploy; there is
-one stage, `prod`.
+(Phase 6, P6-01/02/04). [Alchemy](https://alchemy.run) owns build, dev, and
+deploy for both apps; there is one stage, `prod`.
 
-| File             | Resource                                                                          |
-| ---------------- | --------------------------------------------------------------------------------- |
-| `Db.ts`          | `control-plane-db` — D1, migrations applied from `apps/control-plane/migrations`  |
-| `Secrets.ts`     | `CLOUDFLARE_API_TOKEN` in the account Secrets Store, bound into the control-plane |
-| `Access.ts`      | reusable Access policies + the GitHub Actions service token (ADR-0005)            |
-| `alchemy.run.ts` | the stack: D1 + control-plane Worker + dashboard + the Access application         |
+| File             | Resource                                                                         |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `config.ts`      | `stringOr` / `redactedOr` — a config value with a dev fallback                   |
+| `Db.ts`          | `control-plane-db` — D1, migrations applied from `apps/control-plane/migrations` |
+| `Secrets.ts`     | `CLOUDFLARE_API_TOKEN` in the account Secrets Store (deploy only)                |
+| `Access.ts`      | reusable Access policies + the GitHub Actions service token (deploy only)        |
+| `alchemy.run.ts` | the stack: D1 + control-plane Worker + dashboard, plus Access wiring on deploy   |
 
-## Local development is **not** Alchemy
+## Local development
 
-Unlike demo-project, the control-plane keeps `@cloudflare/vite-plugin` +
-`wrangler.jsonc` for local work (`pnpm --filter control-plane dev`), and the
-dashboard keeps `vite dev`. Reason: this stack declares Cloudflare Access
-resources, and Alchemy plans those against the real Zero Trust API even under
-`alchemy dev` — so `alchemy dev` can't run without a connected account. Alchemy
-here is deploy-only. See ADR-0009.
+`pnpm dev` (= `alchemy dev`) runs the whole stack against local simulators:
+the control-plane in workerd, a local SQLite D1, and the dashboard on SvelteKit's
+vite dev server. Nothing touches the real account — but Alchemy needs a
+Cloudflare **identity** to run its providers, so do this once:
+
+```sh
+pnpm alchemy login          # OAuth, cached to ~/.alchemy — like `wrangler login`
+```
+
+The Access resources and the Secrets Store entry are `ALCHEMY_DEV`-guarded (no
+local simulator exists for either), so `alchemy dev` needs no Zero Trust org —
+the control-plane runs ungated locally, and `CLOUDFLARE_API_TOKEN` is a plain
+binding instead of a store secret. Put real values in a root `.env` if you want
+local observability queries to work; otherwise the dev fallbacks apply.
 
 ## Not yet proven with a real deploy
 
-`pnpm check:alchemy` (typecheck) passes and `alchemy dev` parses the stack and
-builds the plan up to the first Access resource. The real
-`alchemy deploy`, the Zero Trust org + Google IdP, and the end-to-end check
-(P6-06) are driven by [`../scripts/phase-6-deploy.sh`](../scripts/phase-6-deploy.sh).
-Unknowns that only a real deploy settles:
+`pnpm check:alchemy` typechecks the stack; `alchemy dev` builds the plan and runs
+the local resources. The real `alchemy deploy`, the Zero Trust org + Google IdP,
+and the end-to-end check (P6-06) are driven by
+[`../scripts/phase-6-deploy.sh`](../scripts/phase-6-deploy.sh). Unknowns that only
+a real deploy settles:
 
 - **`Website.SvelteKit`** swaps the dashboard's `@sveltejs/adapter-static` for
   Alchemy's in-memory Cloudflare adapter — untested against this app.
@@ -36,13 +45,12 @@ Unknowns that only a real deploy settles:
   `$env/dynamic/public`; a static SPA inlines that at build time. If
   `Website.SvelteKit`'s `env` only reaches the runtime and not the build, the
   bundle keeps its `http://localhost:9003` fallback.
-- **Secrets Store binding shape** — the control-plane reads
-  `CLOUDFLARE_API_TOKEN` as a plain string locally and expects a
-  `SecretsStoreSecret` (`.get()`) when deployed (`helpers/secrets.ts` handles
-  both).
-- **`CF_ACCESS_AUD`** is wired from the Access application's `aud` attribute
-  into the control-plane Worker's env for server-side JWT verification (P6-03);
-  the attribute name is from the Alchemy types, not a live response.
-- **Service-token secret** — `serviceTokenClientId` is a stack output; the
-  secret is shown once by Cloudflare on create. Both go into demo-project's repo
-  secrets (P6-05).
+- **Secrets Store binding shape** — on deploy the control-plane reads
+  `CLOUDFLARE_API_TOKEN` as a `SecretsStoreSecret` (`.get()`); `helpers/secrets.ts`
+  handles that and the local plain-string form.
+- **`CF_ACCESS_AUD`** is wired from the Access application's `aud` attribute into
+  the control-plane Worker's env for server-side JWT verification (P6-03); the
+  attribute name is from the Alchemy types, not a live response.
+- **Service-token secret** — `serviceTokenClientId` is a stack output; the secret
+  is shown once by Cloudflare on create. Both go into demo-project's repo secrets
+  (P6-05).

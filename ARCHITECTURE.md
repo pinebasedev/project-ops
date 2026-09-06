@@ -52,17 +52,19 @@ Adopted directly from Svelteflare's Hono/SvelteKit patterns — the reference re
 - **API conventions**: routes mounted under `/v1`, composed in `routes/index.ts`; `requestId` and `secureHeaders` middleware on every request; a centralized `onError` handler returning sanitized JSON (no leaking internals or stack traces in responses); a `notFound` handler. Folder separation: `routes/`, `middleware/`, `helpers/`, `db/`.
 - **Typed client**: the dashboard calls the control-plane API via Hono's `AppType` export (an RPC-style client, `hc<AppType>()`) for end-to-end type safety with zero codegen. This couples the dashboard's build to the control-plane's types at compile time — accepted, since both live in the same pnpm workspace.
 - **UI**: Tailwind + shadcn-svelte, built directly inside `apps/dashboard` — no separate shared `packages/ui`, since unlike Svelteflare this project has only one frontend to serve. Components installed via `pnpm dlx skills add huntabyte/shadcn-svelte` (plus the relevant Svelte skills), not hand-copied.
-- **Local secrets**: `.dev.vars` (gitignored) for the control plane's own fixed secrets during local development, mirroring what's held in Cloudflare Secrets Store once deployed.
+- **Local secrets**: a gitignored root `.env` (optional) for the control plane's own fixed secrets during local development, mirroring what's held in Cloudflare Secrets Store once deployed; each has a dev fallback so `alchemy dev` runs without it.
 
 **Not adopted** from Svelteflare: better-auth, cookie/session-based login, and the Stripe/billing domain — all superseded by Cloudflare Access ([ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md)), which issues and manages its own session rather than the app rolling its own.
 
 ## Local development
 
-The control-plane API runs locally via `@cloudflare/vite-plugin`, which runs the real `workerd` runtime inside Vite's dev server — not a Node.js simulation. This is separate from the CI-time test suites (unit tests, and the live Integration Test suite described above); it's for manual local testing during development.
+From Phase 6 on, Alchemy (`alchemy.run.ts` + `alchemy/`, [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)) owns build, dev, and deploy for both apps. `pnpm dev` runs `alchemy dev`: the control-plane in the real `workerd` runtime, a local SQLite D1, and the dashboard on SvelteKit's own vite dev server — all against local simulators, nothing remote. It needs a Cloudflare identity once (`alchemy login`, cached to `~/.alchemy`, the same one-time step as `wrangler login`).
 
-The dashboard is a client-rendered SPA (`@sveltejs/adapter-static`, `ssr` disabled) deployed as a Cloudflare Workers assets-only site — it has no server-side Worker code to run, so `@cloudflare/vite-plugin` doesn't apply to it. `vite dev` covers local development; `wrangler dev` against the built `dist/` previews the real asset-serving and SPA-fallback behavior before deploy.
+The Cloudflare Access resources and the Secrets Store entry are guarded out of `alchemy dev` (they have no local simulator), so local dev needs no Zero Trust org — the control-plane simply runs ungated locally, which its JWT middleware already handles.
 
-Deploys, from Phase 6 on, go through Alchemy (`alchemy.run.ts` + `alchemy/`, [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)) — but local development stays on `@cloudflare/vite-plugin` / `vite dev` as above. Alchemy is deploy-only here, because the stack declares Cloudflare Access resources that can't be planned without a connected account.
+The dashboard is a client-rendered SPA (`ssr` disabled). On deploy Alchemy swaps in its own Cloudflare adapter; the `@sveltejs/adapter-static` config stays for `svelte-check` and a standalone `vite build`.
+
+This is separate from the CI-time test suites (the `vitest` unit suite runs in plain Node against an in-memory libsql DB; the live Integration Test suite runs against deployed staging).
 
 ## Tooling & repository conventions
 

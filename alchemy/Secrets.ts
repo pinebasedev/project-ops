@@ -10,14 +10,17 @@ import { redactedOr } from "./config.ts";
  *
  * Bound into the control-plane Worker's `env`, where at runtime it is a
  * `SecretsStoreSecret` read with `.get()` (see the control-plane's
- * `helpers/secrets.ts`). The value comes from `CLOUDFLARE_API_TOKEN` in CI env /
- * a local `.env`; the dev fallback lets `alchemy dev` run without it.
+ * `helpers/secrets.ts`) — `alchemy dev` seeds it into the local Secrets Store
+ * simulator too. The value comes from `CLOUDFLARE_API_TOKEN` in CI env / a local
+ * root `.env`; the fallback is empty, so an unconfigured `alchemy dev` leaves
+ * the recent-errors route reporting "not configured" (ADR-0004) rather than
+ * making calls with a bogus token.
  *
  * `SecretsStore.Store` adopts the account's existing store (Cloudflare allows
  * one per account) and never deletes it on teardown.
  */
 export const controlPlaneApiToken = Effect.gen(function* () {
   const store = yield* Cloudflare.SecretsStore.Store("idp-secrets");
-  const value = yield* redactedOr("CLOUDFLARE_API_TOKEN", "dev-only-cloudflare-api-token");
+  const value = yield* redactedOr("CLOUDFLARE_API_TOKEN", "");
   return yield* Cloudflare.SecretsStore.Secret("CLOUDFLARE_API_TOKEN", { store, value });
 });

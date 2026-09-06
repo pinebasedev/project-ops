@@ -61,9 +61,6 @@ importers:
         specifier: ^4.5.4
         version: 4.5.4
     devDependencies:
-      '@cloudflare/vite-plugin':
-        specifier: ^1.54.4
-        version: 1.54.4(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.0))(wrangler@4.129.0(@cloudflare/workers-types@5.20260905.1))
       '@cloudflare/workers-types':
         specifier: ^5.20260905.1
         version: 5.20260905.1
@@ -82,9 +79,6 @@ importers:
       vitest:
         specifier: ^5.0.0
         version: 5.0.0(@types/node@26.4.1)(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.0))
-      wrangler:
-        specifier: ^4.129.0
-        version: 4.129.0(@cloudflare/workers-types@5.20260905.1)
 
   apps/dashboard:
     dependencies:
@@ -340,13 +334,6 @@ packages:
     peerDependenciesMeta:
       workerd:
         optional: true
-
-  '@cloudflare/vite-plugin@1.54.4':
-    resolution: {integrity: sha512-UkwrW3lcjm9dbRnOyWr8M5e5GzdVLGd6Tz92qk1K7XOE5uEuuE4BtfnfNlKe9IoimZijqsU3Bwdlyxhquk1yMw==}
-    hasBin: true
-    peerDependencies:
-      vite: ^6.1.0 || ^7.0.0 || ^8.0.0
-      wrangler: ^4.129.0
 
   '@cloudflare/workerd-darwin-64@1.20260704.1':
     resolution: {integrity: sha512-XO+vvdhhTNZSsIWCkZ+JaE/JrFUmQAB0H0y/sVkAf32xa2TYBRvFUMwjSqf6WxtlxcKPQvmbLfpO/UQ0l/q4eQ==}
@@ -4262,19 +4249,6 @@ snapshots:
       unenv: 2.0.0-rc.24
     optionalDependencies:
       workerd: 1.20260903.1
-
-  '@cloudflare/vite-plugin@1.54.4(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.0))(wrangler@4.129.0(@cloudflare/workers-types@5.20260905.1))':
-    dependencies:
-      '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260903.1)
-      miniflare: 5.20260903.0-alpha
-      unenv: 2.0.0-rc.24
-      vite: 8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.0)
-      workerd: 1.20260903.1
-      wrangler: 4.129.0(@cloudflare/workers-types@5.20260905.1)
-      ws: 8.21.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
 
   '@cloudflare/workerd-darwin-64@1.20260704.1':
     optional: true
