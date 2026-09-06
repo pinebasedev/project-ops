@@ -49,14 +49,17 @@ export const deployments = sqliteTable("deployments", {
     .default(sql`(unixepoch())`),
 });
 
-// Only the relation actually queried (deployment -> its environment, for the
-// ownership check in routes/deployments.ts) — no reverse/many relations until
-// a route needs one.
 export const deploymentsRelations = relations(deployments, ({ one }) => ({
   environment: one(environments, {
     fields: [deployments.environmentId],
     references: [environments.id],
   }),
+}));
+
+// The reverse side, used by the query routes to embed an Environment's latest
+// Deployment (status, commit, preview URL) alongside the Environment row.
+export const environmentsRelations = relations(environments, ({ many }) => ({
+  deployments: many(deployments),
 }));
 
 export type Project = typeof projects.$inferSelect;

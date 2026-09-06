@@ -1,16 +1,24 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { environmentKinds, environments, projects } from "../db/schema";
+import { deployments, environmentKinds, environments, projects } from "../db/schema";
 import type { Env } from "../env";
 import { isUniqueConstraintError } from "../helpers/dbErrors";
+import { flattenLatestDeployment } from "../helpers/environments";
 import { mintToken } from "../helpers/tokens";
 
 const registerSchema = z.object({ name: z.string().min(1) });
 const listEnvironmentsQuerySchema = z.object({ kind: z.enum(environmentKinds).optional() });
 
 export const projectRoutes = new Hono<Env>()
+  .get("/", async (c) => {
+    const rows = await c.get("db").query.projects.findMany({
+      columns: { tokenHash: false },
+      orderBy: [desc(projects.createdAt)],
+    });
+    return c.json(rows);
+  })
   .post("/", zValidator("json", registerSchema), async (c) => {
     const { name } = c.req.valid("json");
     const { token, tokenHash } = await mintToken();
@@ -35,7 +43,13 @@ export const projectRoutes = new Hono<Env>()
       where: kind
         ? and(eq(environments.projectId, projectId), eq(environments.kind, kind))
         : eq(environments.projectId, projectId),
+      with: {
+        deployments: {
+          orderBy: [desc(deployments.createdAt)],
+          limit: 1,
+        },
+      },
     });
 
-    return c.json(rows);
+    return c.json(rows.map(flattenLatestDeployment));
   });
