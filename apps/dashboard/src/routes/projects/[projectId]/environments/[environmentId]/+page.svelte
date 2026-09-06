@@ -8,6 +8,17 @@
 	let deployment = $derived(data.environment.latestDeployment);
 </script>
 
+{#snippet notice(message: string, tone: 'muted' | 'warn' = 'muted')}
+	<p
+		class="mt-3 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground {tone ===
+		'warn'
+			? 'border-amber-300 dark:border-amber-900'
+			: 'border-border'}"
+	>
+		{message}
+	</p>
+{/snippet}
+
 <div class="mx-auto max-w-2xl px-6 py-10">
 	<a
 		href="/projects/{data.projectId}"
@@ -48,9 +59,7 @@
 			{/if}
 		</dl>
 	{:else}
-		<p class="mt-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-			This environment has no deployments yet.
-		</p>
+		{@render notice('This environment has no deployments yet.')}
 	{/if}
 
 	<h2 class="mt-8 text-sm font-medium text-muted-foreground">Recent errors</h2>
@@ -60,23 +69,16 @@
 	</p>
 
 	{#await data.recentErrors}
-		<p class="mt-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-			Loading errors&hellip;
-		</p>
+		{@render notice('Loading errors…')}
 	{:then result}
 		{#if result.state === 'not-configured'}
-			<p class="mt-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-				The control plane has no Cloudflare API credentials configured, so it can't query
-				observability.
-			</p>
+			{@render notice(
+				"The control plane has no Cloudflare API credentials configured, so it can't query observability."
+			)}
 		{:else if result.state === 'unavailable'}
-			<p class="mt-3 rounded-lg border border-dashed border-amber-300 p-6 text-center text-sm text-muted-foreground dark:border-amber-900">
-				Couldn't reach Cloudflare's Telemetry API. Try again shortly.
-			</p>
+			{@render notice("Couldn't reach Cloudflare's Telemetry API. Try again shortly.", 'warn')}
 		{:else if result.since === null}
-			<p class="mt-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-				No deployment yet &mdash; nothing to report.
-			</p>
+			{@render notice('No deployment yet — nothing to report.')}
 		{:else if result.errors.length === 0}
 			<p class="mt-3 rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
 				No errors since {formatEventTimestamp(result.since)}.

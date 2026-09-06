@@ -1,5 +1,9 @@
 import { api } from "./client";
 
+// The dashboard's view model for one error line. Deliberately hand-written rather
+// than pulled off the wire type: the control plane doesn't export it as a named
+// type over RPC, and a 4-field view model reads better here than
+// `Extract<Awaited<ReturnType<…>>>` acrobatics.
 export type ObservedError = {
   timestamp: string;
   message: string;
@@ -19,24 +23,25 @@ export type RecentErrors =
   | { state: "unavailable" };
 
 export async function loadRecentErrors(environmentId: string): Promise<RecentErrors> {
-  let res: Awaited<ReturnType<(typeof api.v1.environments)[":id"]["errors"]["$get"]>>;
   try {
-    res = await api.v1.environments[":id"].errors.$get({
+    const res = await api.v1.environments[":id"].errors.$get({
       param: { id: environmentId },
       query: {},
     });
+
+    // 503 covers both "no credentials configured" and "credentials rejected" —
+    // either way the control plane can't answer, and retrying won't help.
+    if (res.status === 503) return { state: "not-configured" };
+    if (!res.ok) return { state: "unavailable" };
+
+    const body = await res.json();
+    return {
+      state: "ok",
+      workerName: body.workerName,
+      since: body.since,
+      errors: "errors" in body ? body.errors : [],
+    };
   } catch {
     return { state: "unavailable" };
   }
-
-  if (res.status === 503) return { state: "not-configured" };
-  if (!res.ok) return { state: "unavailable" };
-
-  const body = await res.json();
-  return {
-    state: "ok",
-    workerName: body.workerName,
-    since: body.since,
-    errors: "errors" in body ? body.errors : [],
-  };
 }
