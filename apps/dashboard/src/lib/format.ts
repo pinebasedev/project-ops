@@ -80,6 +80,23 @@ export function integrationTestPresentation(deployment: {
 }
 
 /**
+ * Link out to GitHub's own compare view for "what changed between two
+ * Deployments" — the control plane never calls GitHub's API or stores a diff
+ * (ADR-0007). Returns null (so the caller hides the link) when the Project has
+ * no `owner/repo` slug, when either commit is missing, or when the two commits
+ * are identical (nothing to compare).
+ */
+export function githubCompareUrl(
+  repo: string | null | undefined,
+  baseSha: string | null | undefined,
+  headSha: string | null | undefined,
+): string | null {
+  const slug = repo?.trim();
+  if (!slug || !baseSha || !headSha || baseSha === headSha) return null;
+  return `https://github.com/${slug}/compare/${baseSha}...${headSha}`;
+}
+
+/**
  * How to title an environment in the UI: its PR number when a deployment has
  * recorded one, otherwise the Alchemy stage name as a fallback.
  */

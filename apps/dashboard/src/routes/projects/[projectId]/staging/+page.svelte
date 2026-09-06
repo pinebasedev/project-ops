@@ -1,6 +1,6 @@
 <script lang="ts">
 	import StatusPill from '$lib/components/StatusPill.svelte';
-	import { integrationTestPresentation, shortSha } from '$lib/format';
+	import { githubCompareUrl, integrationTestPresentation, shortSha } from '$lib/format';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -9,6 +9,15 @@
 	let integrationTests = $derived(deployment ? integrationTestPresentation(deployment) : null);
 	// Reported and at least one test failed — the "don't promote" state.
 	let failing = $derived(integrationTests?.failing === true);
+	// "What would promoting this ship?" — staging's commit against production's
+	// (P4-04). Null unless the project has a repo slug and both have deployed.
+	let compareUrl = $derived(
+		githubCompareUrl(
+			data.project.githubRepo,
+			data.productionDeployment?.commitSha,
+			deployment?.commitSha
+		)
+	);
 </script>
 
 <div class="mx-auto max-w-2xl px-6 py-10">
@@ -60,6 +69,17 @@
 				</a>
 			{/if}
 		</section>
+
+		{#if compareUrl}
+			<a
+				href={compareUrl}
+				target="_blank"
+				rel="noreferrer"
+				class="mt-4 inline-block text-sm text-primary hover:underline"
+			>
+				Compare with production &mdash; what promotion would ship &rarr;
+			</a>
+		{/if}
 
 		<h2 class="mt-8 text-sm font-medium text-muted-foreground">Current deployment</h2>
 		<dl class="mt-3 divide-y divide-border rounded-lg border border-border">

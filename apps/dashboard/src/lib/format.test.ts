@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   environmentTitle,
+  githubCompareUrl,
   integrationTestPresentation,
   shortSha,
   statusPresentation,
@@ -65,6 +66,29 @@ describe("integrationTestPresentation", () => {
     expect(
       integrationTestPresentation({ integrationTestsPassed: 1, integrationTestsFailed: 0 }).label,
     ).toBe("1 test passing");
+  });
+});
+
+describe("githubCompareUrl", () => {
+  it("builds a compare URL from a repo slug and two SHAs", () => {
+    expect(githubCompareUrl("pinebase/demo-project", "aaa111", "bbb222")).toBe(
+      "https://github.com/pinebase/demo-project/compare/aaa111...bbb222",
+    );
+  });
+
+  it("returns null when the project has no repo slug", () => {
+    expect(githubCompareUrl(null, "aaa111", "bbb222")).toBeNull();
+    expect(githubCompareUrl(undefined, "aaa111", "bbb222")).toBeNull();
+    expect(githubCompareUrl("  ", "aaa111", "bbb222")).toBeNull();
+  });
+
+  it("returns null when either SHA is missing", () => {
+    expect(githubCompareUrl("pinebase/demo-project", null, "bbb222")).toBeNull();
+    expect(githubCompareUrl("pinebase/demo-project", "aaa111", undefined)).toBeNull();
+  });
+
+  it("returns null when both SHAs are the same — there is nothing to compare", () => {
+    expect(githubCompareUrl("pinebase/demo-project", "aaa111", "aaa111")).toBeNull();
   });
 });
 

@@ -13,19 +13,31 @@ import type { PageLoad } from "./$types";
 // previous one in the view. Surfacing the last reported result across redeploys
 // needs a control-plane query this phase doesn't add.
 export const load: PageLoad = async ({ params }) => {
-  const [project, environmentsRes] = await Promise.all([
-    loadProject(params.projectId),
+  const environments = (kind: "staging" | "production") =>
     api.v1.projects[":projectId"].environments.$get({
       param: { projectId: params.projectId },
-      query: { kind: "staging" },
-    }),
+      query: { kind },
+    });
+
+  const [project, stagingRes, productionRes] = await Promise.all([
+    loadProject(params.projectId),
+    environments("staging"),
+    environments("production"),
   ]);
 
-  if (!environmentsRes.ok) {
+  if (!stagingRes.ok || !productionRes.ok) {
     throw error(502, "Could not reach the control-plane API");
   }
 
-  const [environment] = await environmentsRes.json();
+  const [environment] = await stagingRes.json();
+  const [production] = await productionRes.json();
 
-  return { project, environment: environment ?? null };
+  // The production Deployment the "compare with production" link diffs against
+  // (P4-04) — "what would promoting staging ship?". Null until production has
+  // ever deployed.
+  return {
+    project,
+    environment: environment ?? null,
+    productionDeployment: production?.latestDeployment ?? null,
+  };
 };
