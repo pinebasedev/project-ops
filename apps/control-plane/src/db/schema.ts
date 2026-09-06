@@ -11,6 +11,11 @@ export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
   tokenHash: text("token_hash").notNull(),
+  // GitHub repo the Project's commits live in, as an `owner/repo` slug. Used
+  // only to build link-outs to GitHub's own compare view for Deployment diffs
+  // (ADR-0007) — the control plane never calls the GitHub API. Nullable: a
+  // Project registered without one just doesn't get diff links.
+  githubRepo: text("github_repo"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

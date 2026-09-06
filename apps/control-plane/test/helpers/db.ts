@@ -17,11 +17,13 @@ export async function createTestDb(): Promise<Database> {
 
 export async function seedProject(
   db: Database,
-  overrides: { id?: string; name?: string } = {},
+  overrides: { id?: string; name?: string; githubRepo?: string } = {},
 ): Promise<{ id: string; name: string; token: string }> {
   const id = overrides.id ?? crypto.randomUUID();
   const name = overrides.name ?? `project-${id}`;
   const { token, tokenHash } = await mintToken();
-  await db.insert(projects).values({ id, name, tokenHash });
+  await db
+    .insert(projects)
+    .values({ id, name, tokenHash, githubRepo: overrides.githubRepo ?? null });
   return { id, name, token };
 }

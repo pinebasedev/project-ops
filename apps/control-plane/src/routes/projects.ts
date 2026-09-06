@@ -8,7 +8,16 @@ import { isUniqueConstraintError } from "../helpers/dbErrors";
 import { flattenLatestDeployment, withLatestDeployment } from "../helpers/environments";
 import { mintToken } from "../helpers/tokens";
 
-const registerSchema = z.object({ name: z.string().min(1) });
+// `owner/repo`, GitHub's own shape — just enough to build a compare-view URL
+// (ADR-0007). Not a full URL: the control plane only ever links out, never calls.
+const githubRepoSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "Expected an owner/repo slug");
+
+const registerSchema = z.object({
+  name: z.string().min(1),
+  githubRepo: githubRepoSchema.optional(),
+});
 const listEnvironmentsQuerySchema = z.object({ kind: z.enum(environmentKinds).optional() });
 
 export const projectRoutes = new Hono<Env>()
@@ -20,12 +29,15 @@ export const projectRoutes = new Hono<Env>()
     return c.json(rows);
   })
   .post("/", zValidator("json", registerSchema), async (c) => {
-    const { name } = c.req.valid("json");
+    const { name, githubRepo } = c.req.valid("json");
     const { token, tokenHash } = await mintToken();
     const id = crypto.randomUUID();
 
     try {
-      await c.get("db").insert(projects).values({ id, name, tokenHash });
+      await c
+        .get("db")
+        .insert(projects)
+        .values({ id, name, tokenHash, githubRepo: githubRepo ?? null });
     } catch (error) {
       if (isUniqueConstraintError(error)) {
         return c.json({ error: "A project with that name already exists" }, 409);
@@ -33,7 +45,7 @@ export const projectRoutes = new Hono<Env>()
       throw error;
     }
 
-    return c.json({ id, name, token }, 201);
+    return c.json({ id, name, githubRepo: githubRepo ?? null, token }, 201);
   })
   .get("/:projectId/environments", zValidator("query", listEnvironmentsQuerySchema), async (c) => {
     const { projectId } = c.req.param();

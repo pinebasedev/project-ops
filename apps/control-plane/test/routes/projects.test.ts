@@ -18,6 +18,18 @@ describe("GET /v1/projects", () => {
     }
   });
 
+  it("exposes each project's github repo slug (null when unset)", async () => {
+    const db = await createTestDb();
+    await seedProject(db, { name: "with-repo", githubRepo: "pinebase/demo-project" });
+    await seedProject(db, { name: "without-repo" });
+    const app = createApp({ db });
+
+    const res = await app.request("/v1/projects");
+    const body = (await res.json()) as { name: string; githubRepo: string | null }[];
+    expect(body.find((p) => p.name === "with-repo")?.githubRepo).toBe("pinebase/demo-project");
+    expect(body.find((p) => p.name === "without-repo")?.githubRepo).toBeNull();
+  });
+
   it("returns an empty list when no projects are registered", async () => {
     const app = createApp({ db: await createTestDb() });
     const res = await app.request("/v1/projects");
@@ -40,6 +52,31 @@ describe("POST /v1/projects", () => {
     expect(body).toMatchObject({ name: "svelteflare" });
     expect(typeof body.id).toBe("string");
     expect(typeof body.token).toBe("string");
+  });
+
+  it("stores an optional github repo slug", async () => {
+    const app = createApp({ db: await createTestDb() });
+    const res = await app.request("/v1/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "svelteflare", githubRepo: "pinebase/demo-project" }),
+    });
+
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ githubRepo: "pinebase/demo-project" });
+  });
+
+  it("rejects a github repo that isn't an owner/repo slug", async () => {
+    const app = createApp({ db: await createTestDb() });
+    const res = await app.request("/v1/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "svelteflare",
+        githubRepo: "https://github.com/pinebase/demo-project",
+      }),
+    });
+    expect(res.status).toBe(400);
   });
 
   it("rejects a missing name", async () => {
