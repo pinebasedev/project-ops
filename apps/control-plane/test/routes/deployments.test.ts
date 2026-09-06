@@ -127,6 +127,26 @@ describe("POST /v1/deployments/:id/complete", () => {
   });
 });
 
+describe("GET /v1/deployments/:id", () => {
+  it("returns a deployment without requiring auth", async () => {
+    const db = await createTestDb();
+    const { token } = await seedProject(db);
+    const deploymentId = await createInProgressDeployment(db, token);
+    const app = createApp({ db });
+
+    const res = await app.request(`/v1/deployments/${deploymentId}`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ commitSha: "abc123", status: "in_progress" });
+  });
+
+  it("returns 404 for an unknown deployment", async () => {
+    const db = await createTestDb();
+    const app = createApp({ db });
+    const res = await app.request("/v1/deployments/nope");
+    expect(res.status).toBe(404);
+  });
+});
+
 async function createInProgressDeployment(db: Database, token: string) {
   const res = await createApp({ db }).request("/v1/deployments", {
     method: "POST",

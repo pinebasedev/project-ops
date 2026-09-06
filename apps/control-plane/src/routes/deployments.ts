@@ -90,4 +90,11 @@ export const deploymentRoutes = new Hono<Env>()
       const updated = await db.query.deployments.findFirst({ where: eq(deployments.id, id) });
       return c.json(updated, 200);
     },
-  );
+  )
+  .get("/:id", async (c) => {
+    const deployment = await c.get("db").query.deployments.findFirst({
+      where: eq(deployments.id, c.req.param("id")),
+    });
+    if (!deployment) return notFoundJson(c);
+    return c.json(deployment);
+  });
