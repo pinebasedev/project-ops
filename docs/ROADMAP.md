@@ -45,11 +45,11 @@ per-environment deployment state, which lives on the `Deployment` row.
 
 ## Phase 3 — Staging + Integration Tests
 
-- [ ] **P3-01** `feat(db)` `Environment.kind` gains `staging` in practice; extend demo-project's Alchemy stack with stage `staging`.
+- [ ] **P3-01** `feat(db)` `Environment.kind` gains `staging` in practice; extend demo-project's Alchemy stack with stage `staging`. *(Control-plane side needs nothing — `kind` already carries `staging` and the query/dashboard paths now exercise it. Remaining: the demo-project Alchemy `staging` stage, a real deploy.)*
 - [ ] **P3-02** `feat(ci)` *(demo-project repo)* Merging a PR into `staging` triggers an Alchemy deploy of stage `staging` and destroys the merged PR's `pr-{number}` stage.
 - [ ] **P3-03** `test(integration)` *(demo-project repo)* The actual Integration Test suite — runs once, live, against the deployed staging URL (ADR-0006).
-- [ ] **P3-04** `feat(api)` Extend the callback payload with the aggregate integration-test result (pass/fail counts) + Actions run URL — no per-test detail (ADR-0007).
-- [ ] **P3-05** `feat(dashboard)` Staging status view: current Deployment + Integration Test result, prominent — this is what stops someone promoting a broken staging (ADR-0006's consequence, since promotion itself is ungated).
+- [x] **P3-04** `feat(api)` Extend the callback payload with the aggregate integration-test result (pass/fail counts) + Actions run URL — no per-test detail (ADR-0007). *(New route `POST /v1/deployments/:id/integration-results` — separate from `/complete` since the live suite runs after the deploy is already `done`. Adds `integration_tests_passed` / `_failed` / `_run_url` to the `deployments` table.)*
+- [x] **P3-05** `feat(dashboard)` Staging status view: current Deployment + Integration Test result, prominent — this is what stops someone promoting a broken staging (ADR-0006's consequence, since promotion itself is ungated). *(`/projects/:id/staging`, linked from the project page. Integration Test panel turns red on failure.)*
 
 ## Phase 4 — Promotion + Production
 
