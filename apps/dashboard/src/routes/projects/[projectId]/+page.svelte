@@ -16,7 +16,13 @@
 <div class="mx-auto max-w-4xl px-6 py-10">
 	<a href="/" class="text-sm text-muted-foreground hover:text-foreground">&larr; Projects</a>
 	<h1 class="mt-2 text-2xl font-semibold text-foreground">{data.project.name}</h1>
-	<p class="mt-1 text-sm text-muted-foreground">Ephemeral environments, one per pull request.</p>
+	<div class="mt-1 flex items-center justify-between gap-4">
+		<p class="text-sm text-muted-foreground">Ephemeral environments, one per pull request.</p>
+		<a
+			href="/projects/{data.project.id}/staging"
+			class="shrink-0 text-sm text-primary hover:underline">Staging status &rarr;</a
+		>
+	</div>
 
 	{#if environments.length === 0}
 		<p
