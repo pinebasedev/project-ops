@@ -11,5 +11,20 @@ const baseUrl = env.PUBLIC_CONTROL_PLANE_URL ?? "http://localhost:9003";
 /**
  * End-to-end typed RPC client for the control-plane API, derived from its Hono
  * `AppType` export — no codegen. See ARCHITECTURE.md ("Typed client").
+ *
+ * This is transport only. Callers go through the control-plane module in
+ * `controlPlane.ts` rather than reaching for this directly, so the HTTP error
+ * protocol lives in one place.
  */
-export const api = hc<AppType>(baseUrl);
+export type ApiClient = ReturnType<typeof hc<AppType>>;
+
+export const api: ApiClient = hc<AppType>(baseUrl);
+
+/**
+ * A client pointed at an arbitrary base URL and `fetch`. Tests pass the
+ * control-plane's own `createApp().request`, which runs the real API in-process
+ * with no network — the second adapter at this seam.
+ */
+export function createApiClient(url: string, fetchImpl?: typeof fetch): ApiClient {
+  return hc<AppType>(url, fetchImpl ? { fetch: fetchImpl } : undefined);
+}

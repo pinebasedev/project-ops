@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./app": "./src/app.ts"
+    "./app": "./src/app.ts",
+    "./testing": "./test/helpers/db.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -1,6 +1,4 @@
-import { api } from "$lib/api/client";
-import { loadProject } from "$lib/api/loadProject";
-import { error } from "@sveltejs/kit";
+import { controlPlane } from "$lib/api/controlPlane";
 import type { PageLoad } from "./$types";
 
 // The staging status view. Because promotion (staging → main) is an ungated git
@@ -13,31 +11,18 @@ import type { PageLoad } from "./$types";
 // previous one in the view. Surfacing the last reported result across redeploys
 // needs a control-plane query this phase doesn't add.
 export const load: PageLoad = async ({ params }) => {
-  const environments = (kind: "staging" | "production") =>
-    api.v1.projects[":projectId"].environments.$get({
-      param: { projectId: params.projectId },
-      query: { kind },
-    });
-
-  const [project, stagingRes, productionRes] = await Promise.all([
-    loadProject(params.projectId),
-    environments("staging"),
-    environments("production"),
+  const [project, environment, production] = await Promise.all([
+    controlPlane.getProject(params.projectId),
+    controlPlane.getEnvironmentOfKind(params.projectId, "staging"),
+    controlPlane.getEnvironmentOfKind(params.projectId, "production"),
   ]);
-
-  if (!stagingRes.ok || !productionRes.ok) {
-    throw error(502, "Could not reach the control-plane API");
-  }
-
-  const [environment] = await stagingRes.json();
-  const [production] = await productionRes.json();
 
   // The production Deployment the "compare with production" link diffs against
   // (P4-04) — "what would promoting staging ship?". Null until production has
   // ever deployed.
   return {
     project,
-    environment: environment ?? null,
+    environment,
     productionDeployment: production?.latestDeployment ?? null,
   };
 };
