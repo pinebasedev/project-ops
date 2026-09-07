@@ -62,6 +62,10 @@ export const deploymentRoutes = new Hono<Env>()
       } catch (error) {
         // A concurrent first-deploy of the same stage won the race — reuse its environment.
         if (!isUniqueConstraintError(error)) throw error;
+        c.get("logger").debug("environment create lost the race, reusing existing", {
+          projectId: project.id,
+          stageName,
+        });
         environment = await db.query.environments.findFirst({
           where: and(eq(environments.projectId, project.id), eq(environments.stageName, stageName)),
         });
@@ -78,6 +82,14 @@ export const deploymentRoutes = new Hono<Env>()
       prNumber: prNumber ?? null,
     });
 
+    c.get("logger").info("deployment created", {
+      deploymentId,
+      environmentId: environment.id,
+      projectId: project.id,
+      stageName,
+      kind,
+      commitSha,
+    });
     return c.json({ deploymentId, environmentId: environment.id }, 201);
   })
   .post(
@@ -98,6 +110,7 @@ export const deploymentRoutes = new Hono<Env>()
         .set({ status, previewUrl: previewUrl ?? null, updatedAt: new Date() })
         .where(eq(deployments.id, id));
 
+      c.get("logger").info("deployment completed", { deploymentId: id, status });
       const updated = await db.query.deployments.findFirst({ where: eq(deployments.id, id) });
       return c.json(updated, 200);
     },

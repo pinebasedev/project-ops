@@ -3,3 +3,5 @@ import { secureHeaders } from "hono/secure-headers";
 
 export const requestIdMiddleware = requestId();
 export const secureHeadersMiddleware = secureHeaders();
+
+export { loggerMiddleware } from "./logger";

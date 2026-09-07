@@ -1,7 +1,13 @@
 import type { Context, ErrorHandler, NotFoundHandler } from "hono";
+import { createLogger, type Logger } from "./logger";
 
 export const onError: ErrorHandler = (err, c) => {
-  console.error(err);
+  // `loggerMiddleware` runs first, so the bound logger is normally set; fall
+  // back to a bare one if the error was thrown before it ran (or in a test
+  // mounting this handler on a bare app).
+  const logger =
+    (c.get("logger") as Logger | undefined) ?? createLogger({ requestId: c.get("requestId") });
+  logger.error("unhandled exception", { err, method: c.req.method, path: c.req.path });
   return c.json({ error: "Internal Server Error" }, 500);
 };
 

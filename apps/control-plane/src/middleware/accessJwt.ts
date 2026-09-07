@@ -50,7 +50,10 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
 
   return async (c, next) => {
     const token = c.req.header(ACCESS_JWT_HEADER);
-    if (!token) return unauthorizedJson(c);
+    if (!token) {
+      c.get("logger")?.warn("access assertion rejected", { reason: "missing assertion header" });
+      return unauthorizedJson(c);
+    }
 
     try {
       const payload = await Jwt.verifyWithJwks(token, {
@@ -59,7 +62,8 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
         allowedAlgorithms: ["RS256"],
       });
       c.set("accessJwt", payload);
-    } catch {
+    } catch (err) {
+      c.get("logger")?.warn("access assertion rejected", { reason: "verification failed", err });
       return unauthorizedJson(c);
     }
 

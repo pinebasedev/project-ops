@@ -4,7 +4,7 @@ import { createDb, type Database } from "./db/client";
 import type { Env } from "./env";
 import { notFound, onError } from "./helpers/errors";
 import { observabilityFromEnv, type ObservabilityClient } from "./helpers/observability";
-import { requestIdMiddleware, secureHeadersMiddleware } from "./middleware";
+import { loggerMiddleware, requestIdMiddleware, secureHeadersMiddleware } from "./middleware";
 import {
   accessJwtConfigFromEnv,
   createAccessJwtMiddleware,
@@ -28,6 +28,7 @@ export function createApp(overrides: AppOverrides = {}) {
   const app = new Hono<Env>();
 
   app.use("*", requestIdMiddleware);
+  app.use("*", loggerMiddleware);
   app.use("*", secureHeadersMiddleware);
 
   // Cloudflare Access perimeter (ADR-0005, P6-03). Verifies the edge-supplied

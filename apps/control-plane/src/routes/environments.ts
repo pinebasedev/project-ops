@@ -64,6 +64,11 @@ export const environmentRoutes = new Hono<Env>()
       return c.json({ workerName, since: since.toISOString(), errors });
     } catch (error) {
       if (error instanceof ObservabilityError) {
+        c.get("logger").warn("recent errors query failed", {
+          workerName,
+          kind: error.kind,
+          err: error,
+        });
         return error.kind === "auth"
           ? c.json({ error: "Observability credentials were rejected" }, 503)
           : c.json({ error: "Could not reach Cloudflare's Telemetry API" }, 502);

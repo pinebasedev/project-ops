@@ -40,6 +40,7 @@ export const projectRoutes = new Hono<Env>()
         .values({ id, name, tokenHash, githubRepo: githubRepo ?? null });
     } catch (error) {
       if (isUniqueConstraintError(error)) {
+        c.get("logger").warn("project registration rejected", { reason: "duplicate name", name });
         return c.json({ error: "A project with that name already exists" }, 409);
       }
       throw error;

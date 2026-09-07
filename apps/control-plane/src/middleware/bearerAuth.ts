@@ -10,6 +10,7 @@ const BEARER_PREFIX = "Bearer ";
 export const bearerAuthMiddleware: MiddlewareHandler<Env> = async (c, next) => {
   const header = c.req.header("Authorization");
   if (!header || !header.startsWith(BEARER_PREFIX)) {
+    c.get("logger")?.warn("bearer auth rejected", { reason: "missing or malformed header" });
     return unauthorizedJson(c);
   }
 
@@ -20,6 +21,7 @@ export const bearerAuthMiddleware: MiddlewareHandler<Env> = async (c, next) => {
   });
 
   if (!project) {
+    c.get("logger")?.warn("bearer auth rejected", { reason: "unknown token" });
     return unauthorizedJson(c);
   }
 

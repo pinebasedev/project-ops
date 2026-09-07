@@ -2,6 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import type { JWTPayload } from "hono/utils/jwt/types";
 import type { Database } from "./db/client";
 import type { Project } from "./db/schema";
+import type { Logger } from "./helpers/logger";
 import type { ObservabilityClient } from "./helpers/observability";
 import type { SecretsStoreBinding } from "./helpers/secrets";
 
@@ -29,6 +30,11 @@ export type Bindings = {
 export type Variables = {
   db: Database;
   project: Project;
+  // Set by `requestIdMiddleware` (hono/request-id); also on `X-Request-Id`.
+  requestId: string;
+  // Request-scoped structured logger, bound to `requestId`, set by
+  // `loggerMiddleware`. See `helpers/logger.ts`.
+  logger: Logger;
   // Null when the Cloudflare API credentials above aren't configured.
   observability: ObservabilityClient | null;
   // The verified Access JWT claims, set by the Access middleware (P6-03). Absent

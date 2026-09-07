@@ -65,6 +65,16 @@ export default Alchemy.Stack(
     const controlPlane = yield* Cloudflare.Worker("control-plane", {
       main: "./apps/control-plane/src/index.ts",
       compatibility: { flags: ["nodejs_compat"], date: "2026-09-05" },
+      // Workers Logs: the control plane's structured `console.log`/`console.error`
+      // lines (helpers/logger.ts) plus one invocation log per request, indexed
+      // and queryable in the dashboard. On by default in Alchemy; set explicitly
+      // so the sampling rate is visible here. Keep at 1 — the control plane is
+      // low-traffic (one GitHub Actions run per deploy) and every request matters.
+      observability: {
+        enabled: true,
+        headSamplingRate: 1,
+        logs: { enabled: true, invocationLogs: true },
+      },
       // Pin the local port so the dashboard's `$env/dynamic/public` fallback in
       // `apps/dashboard/src/lib/api/client.ts` stays correct for a standalone
       // `vite dev`; under `alchemy dev` the real URL is wired through instead.
