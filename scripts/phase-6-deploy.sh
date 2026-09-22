@@ -285,6 +285,19 @@ say "token's account-wide permissions. A separate, narrower token means a"
 say "compromised demo-project CI (or any future managed project's) can only"
 say "touch its own resources, not every Worker/D1/R2 on this account."
 ask DEMO_REPO "demo-project's GitHub slug (owner/repo):"
+while true; do
+  if [[ "$DEMO_REPO" != */* || -z "${DEMO_REPO#*/}" || -z "${DEMO_REPO%%/*}" ]]; then
+    warn "'$DEMO_REPO' isn't \"owner/repo\" — needs exactly one slash, both sides non-empty."
+  elif command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1 \
+    && ! gh repo view "$DEMO_REPO" >/dev/null 2>&1; then
+    warn "GitHub repo '$DEMO_REPO' wasn't found (or isn't reachable with the current 'gh' auth)."
+    note "The next stage pushes secrets onto it — it must exist first. Create it, e.g.:"
+    note "  gh repo create $DEMO_REPO --private --source=<path to your demo-project checkout> --push"
+  else
+    break
+  fi
+  ask DEMO_REPO "demo-project's GitHub slug (owner/repo):"
+done
 write_env DEMO_REPO "$DEMO_REPO"
 say ""
 say "demo-project has its own bootstrap stack for this (alchemy/github.ts,"
