@@ -17,3 +17,7 @@ Every managed project's GitHub Actions workflow needs two more repo secrets (`CF
 ## Update (2026-09, Phase 6)
 
 The dashboard IdP is **Google**, not GitHub as written above — GitHub was a placeholder before the org existed, and the founder's identity is a Google account. The allow-list is a single email (`CF_ACCESS_ALLOW_EMAIL`, defaulting to the founder's) rather than an email domain or group. Everything else holds. The concrete stack — `alchemy/Access.ts` + `alchemy.run.ts` — and the deploy procedure are covered by [ADR-0009](./0009-platform-self-provisioning-stack.md).
+
+## Update (2026-09, credential provisioning)
+
+The `Access.ServiceToken` this ADR describes is already provisioned as code (`alchemy/Access.ts`), but its `clientId`/`clientSecret` currently reach a managed project the same ad hoc way `CLOUDFLARE_API_TOKEN` did: printed in the platform's `alchemy deploy` output, read by a human, pasted into `scripts/phase-6-deploy.sh`, then `gh secret set` by the wizard. Per the credential-provisioning update in [ADR-0001](./0001-alchemy-provisioning-driven-by-github-actions.md), this should instead flow directly from the platform's own deploy into the managed project's repo via `GitHub.Secret` — no manual copy-paste step, and rotation just means redeploying rather than a human running the wizard again. Not yet implemented; tracked alongside ADR-0001's follow-up.
