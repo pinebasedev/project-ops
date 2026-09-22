@@ -4,22 +4,16 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { environmentKinds, environments, projects } from "../db/schema";
 import type { Env } from "../env";
-import { isUniqueConstraintError } from "../helpers/dbErrors";
 import { flattenLatestDeployment, withLatestDeployment } from "../helpers/environments";
-import { mintToken } from "../helpers/tokens";
 
-// `owner/repo`, GitHub's own shape — just enough to build a compare-view URL
-// (ADR-0007). Not a full URL: the control plane only ever links out, never calls.
-const githubRepoSchema = z
-  .string()
-  .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, "Expected an owner/repo slug");
-
-const registerSchema = z.object({
-  name: z.string().min(1),
-  githubRepo: githubRepoSchema.optional(),
-});
 const listEnvironmentsQuerySchema = z.object({ kind: z.enum(environmentKinds).optional() });
 
+// No registration route here: a project's row and its bearer-token hash are
+// written directly into this D1 database by each managed project's own
+// bootstrap stack (`alchemy/github.ts`, run once by hand), not minted by
+// calling this API — see ADR-0001's "bearer-token provisioning" update. That
+// keeps this API's token-issuance surface at zero: no route here can mint or
+// overwrite a project's credential, for any caller.
 export const projectRoutes = new Hono<Env>()
   .get("/", async (c) => {
     const rows = await c.get("db").query.projects.findMany({
@@ -27,26 +21,6 @@ export const projectRoutes = new Hono<Env>()
       orderBy: [desc(projects.createdAt)],
     });
     return c.json(rows);
-  })
-  .post("/", zValidator("json", registerSchema), async (c) => {
-    const { name, githubRepo } = c.req.valid("json");
-    const { token, tokenHash } = await mintToken();
-    const id = crypto.randomUUID();
-
-    try {
-      await c
-        .get("db")
-        .insert(projects)
-        .values({ id, name, tokenHash, githubRepo: githubRepo ?? null });
-    } catch (error) {
-      if (isUniqueConstraintError(error)) {
-        c.get("logger").warn("project registration rejected", { reason: "duplicate name", name });
-        return c.json({ error: "A project with that name already exists" }, 409);
-      }
-      throw error;
-    }
-
-    return c.json({ id, name, githubRepo: githubRepo ?? null, token }, 201);
   })
   .get("/:projectId/environments", zValidator("query", listEnvironmentsQuerySchema), async (c) => {
     const { projectId } = c.req.param();
