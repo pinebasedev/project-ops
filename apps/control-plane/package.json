@@ -14,14 +14,14 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "1.0.0-rc.5-5935859",
     "hono": "^4.13.7",
     "zod": "^4.5.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260905.1",
     "@libsql/client": "^0.18.0",
-    "drizzle-kit": "^0.31.10",
+    "drizzle-kit": "1.0.0-rc.5-5935859",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

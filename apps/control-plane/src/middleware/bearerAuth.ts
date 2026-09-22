@@ -1,6 +1,4 @@
-import { eq } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
-import { projects } from "../db/schema";
 import type { Env } from "../env";
 import { unauthorizedJson } from "../helpers/errors";
 import { hashToken } from "../helpers/tokens";
@@ -17,7 +15,7 @@ export const bearerAuthMiddleware: MiddlewareHandler<Env> = async (c, next) => {
   const token = header.slice(BEARER_PREFIX.length);
   const tokenHash = await hashToken(token);
   const project = await c.get("db").query.projects.findFirst({
-    where: eq(projects.tokenHash, tokenHash),
+    where: { tokenHash },
   });
 
   if (!project) {

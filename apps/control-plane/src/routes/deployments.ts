@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { Database } from "../db/client";
@@ -14,7 +14,7 @@ import { requireIdentityMiddleware } from "../middleware/requireIdentity";
 // callback routes reject anything else with a 404 rather than leaking existence.
 async function findOwnedDeployment(db: Database, id: string, projectId: string) {
   const deployment = await db.query.deployments.findFirst({
-    where: eq(deployments.id, id),
+    where: { id },
     with: { environment: true },
   });
   return deployment && deployment.environment.projectId === projectId ? deployment : null;
@@ -45,7 +45,7 @@ export const deploymentRoutes = new Hono<Env>()
     const project = c.get("project");
 
     let environment = await db.query.environments.findFirst({
-      where: and(eq(environments.projectId, project.id), eq(environments.stageName, stageName)),
+      where: { projectId: project.id, stageName },
     });
 
     if (!environment) {
@@ -58,7 +58,7 @@ export const deploymentRoutes = new Hono<Env>()
           stageName,
         });
         environment = await db.query.environments.findFirst({
-          where: eq(environments.id, environmentId),
+          where: { id: environmentId },
         });
       } catch (error) {
         // A concurrent first-deploy of the same stage won the race — reuse its environment.
@@ -68,7 +68,7 @@ export const deploymentRoutes = new Hono<Env>()
           stageName,
         });
         environment = await db.query.environments.findFirst({
-          where: and(eq(environments.projectId, project.id), eq(environments.stageName, stageName)),
+          where: { projectId: project.id, stageName },
         });
       }
     }
@@ -112,7 +112,7 @@ export const deploymentRoutes = new Hono<Env>()
         .where(eq(deployments.id, id));
 
       c.get("logger").info("deployment completed", { deploymentId: id, status });
-      const updated = await db.query.deployments.findFirst({ where: eq(deployments.id, id) });
+      const updated = await db.query.deployments.findFirst({ where: { id } });
       return c.json(updated, 200);
     },
   )
@@ -146,7 +146,7 @@ export const deploymentRoutes = new Hono<Env>()
         })
         .where(eq(deployments.id, id));
 
-      const updated = await db.query.deployments.findFirst({ where: eq(deployments.id, id) });
+      const updated = await db.query.deployments.findFirst({ where: { id } });
       return c.json(updated, 200);
     },
   )
@@ -154,7 +154,7 @@ export const deploymentRoutes = new Hono<Env>()
   // routes/environments.ts — see ADR-0005's update.
   .get("/:id", requireIdentityMiddleware, async (c) => {
     const deployment = await c.get("db").query.deployments.findFirst({
-      where: eq(deployments.id, c.req.param("id")),
+      where: { id: c.req.param("id") },
     });
     if (!deployment) return notFoundJson(c);
     return c.json(deployment);

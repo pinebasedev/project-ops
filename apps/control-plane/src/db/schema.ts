@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { defineRelations, sql } from "drizzle-orm";
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const environmentKinds = ["ephemeral", "staging", "production"] as const;
@@ -62,17 +62,22 @@ export const deployments = sqliteTable("deployments", {
     .default(sql`(unixepoch())`),
 });
 
-export const deploymentsRelations = relations(deployments, ({ one }) => ({
-  environment: one(environments, {
-    fields: [deployments.environmentId],
-    references: [environments.id],
-  }),
-}));
+const tables = { projects, environments, deployments };
 
-// The reverse side, used by the query routes to embed an Environment's latest
-// Deployment (status, commit, preview URL) alongside the Environment row.
-export const environmentsRelations = relations(environments, ({ many }) => ({
-  deployments: many(deployments),
+// The reverse side (environments.deployments), used by the query routes to
+// embed an Environment's latest Deployment (status, commit, preview URL)
+// alongside the Environment row.
+export const dbRelations = defineRelations(tables, (r) => ({
+  deployments: {
+    environment: r.one.environments({
+      from: r.deployments.environmentId,
+      to: r.environments.id,
+      optional: false,
+    }),
+  },
+  environments: {
+    deployments: r.many.deployments(),
+  },
 }));
 
 export type Project = typeof projects.$inferSelect;

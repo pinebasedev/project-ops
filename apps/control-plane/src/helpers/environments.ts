@@ -1,6 +1,5 @@
-import { desc, eq } from "drizzle-orm";
 import type { Database } from "../db/client";
-import { deployments, environments, type Deployment, type Environment } from "../db/schema";
+import type { Deployment, Environment } from "../db/schema";
 
 export type EnvironmentWithLatestDeployment = Environment & {
   latestDeployment: Deployment | null;
@@ -10,7 +9,7 @@ export type EnvironmentWithLatestDeployment = Environment & {
 // plus its most recent Deployment, or `undefined` when the id is unknown.
 export function findEnvironmentWithLatestDeployment(db: Database, id: string) {
   return db.query.environments.findFirst({
-    where: eq(environments.id, id),
+    where: { id },
     with: withLatestDeployment,
   });
 }
@@ -20,10 +19,10 @@ export function findEnvironmentWithLatestDeployment(db: Database, id: string) {
 // `id` is a deterministic (if arbitrary) tie-breaker for same-second redeploys.
 export const withLatestDeployment = {
   deployments: {
-    orderBy: [desc(deployments.createdAt), desc(deployments.id)],
+    orderBy: { createdAt: "desc", id: "desc" },
     limit: 1,
   },
-};
+} as const;
 
 // Collapse the `deployments` array (0 or 1 rows) that `withLatestDeployment`
 // produces into a single `latestDeployment` field, so the list and get-by-id

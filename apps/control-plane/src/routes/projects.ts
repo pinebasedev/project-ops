@@ -1,8 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { environmentKinds, environments, projects } from "../db/schema";
+import { environmentKinds } from "../db/schema";
 import type { Env } from "../env";
 import { flattenLatestDeployment, withLatestDeployment } from "../helpers/environments";
 import { requireIdentityMiddleware } from "../middleware/requireIdentity";
@@ -24,7 +23,7 @@ export const projectRoutes = new Hono<Env>()
   .get("/", requireIdentityMiddleware, async (c) => {
     const rows = await c.get("db").query.projects.findMany({
       columns: { tokenHash: false },
-      orderBy: [desc(projects.createdAt)],
+      orderBy: { createdAt: "desc" },
     });
     return c.json(rows);
   })
@@ -37,9 +36,7 @@ export const projectRoutes = new Hono<Env>()
       const { kind } = c.req.valid("query");
 
       const rows = await c.get("db").query.environments.findMany({
-        where: kind
-          ? and(eq(environments.projectId, projectId), eq(environments.kind, kind))
-          : eq(environments.projectId, projectId),
+        where: kind ? { projectId, kind } : { projectId },
         with: withLatestDeployment,
       });
 

@@ -3,8 +3,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { join } from "node:path";
 import type { Database } from "../../src/db/client";
-import { projects } from "../../src/db/schema";
-import * as schema from "../../src/db/schema";
+import { dbRelations, projects } from "../../src/db/schema";
 import { mintToken } from "../../src/helpers/tokens";
 
 // Resolved against this module, not the working directory: the dashboard's own
@@ -16,7 +15,7 @@ const MIGRATIONS_FOLDER = join(import.meta.dirname, "../../migrations");
 // the same `Database` type used against the real D1 binding in production.
 export async function createTestDb(): Promise<Database> {
   const client = createClient({ url: ":memory:" });
-  const db = drizzle(client, { schema });
+  const db = drizzle({ client, relations: dbRelations });
   await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
   return db;
 }
