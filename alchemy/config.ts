@@ -6,4 +6,4 @@ import * as Config from "effect/Config";
  * `devSecret` helper (`../demo-project/alchemy/Api.ts`).
  */
 export const stringOr = (name: string, fallback: string): Config.Config<string> =>
-  Config.string(name).pipe(Config.withDefault(fallback));
+  Config.String(name).pipe(Config.withDefault(fallback));
