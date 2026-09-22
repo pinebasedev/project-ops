@@ -5,7 +5,7 @@ Status: accepted
 The control-plane API, the dashboard, their shared D1 database, the Cloudflare Access perimeter ([ADR-0005](./0005-cloudflare-access-in-front-of-dashboard-and-api.md)), and the control-plane's Secrets Store entry are all declared in a single Alchemy stack at the repo root (`alchemy.run.ts` + `alchemy/`), one stage: `prod`. Alchemy owns build, dev, and deploy for both apps — the control-plane's `wrangler.jsonc` and `@cloudflare/vite-plugin` are gone. This is where the platform is deployed for the first time, already behind Access, never before (see `docs/ROADMAP.md`, "Sequencing assumptions"). It extends [ADR-0001](./0001-alchemy-provisioning-driven-by-github-actions.md), which governs how *managed projects* are provisioned; this ADR covers the platform provisioning itself.
 
 - **One stack, not one-per-component.** The dashboard's typed-client base URL is the control-plane Worker's URL, the control-plane's `CF_ACCESS_AUD` is the Access application's audience tag, and the Access application spans both Workers — the resources are too coupled to split, and a single `alchemy deploy` standing up the whole platform (Access included) is the property [ADR-0005](./0005-cloudflare-access-in-front-of-dashboard-and-api.md) asks for.
-- **`alchemy dev` is the local workflow.** `pnpm dev` runs the whole stack against local simulators (workerd + a local SQLite D1; SvelteKit's own vite dev server for the dashboard). It needs a Cloudflare identity — `alchemy login` once, cached to `~/.alchemy`, the same one-time step as `wrangler login` — but touches nothing remote; real changes happen only on `alchemy deploy`.
+- **`alchemy dev` is the local workflow.** `pnpm dev` runs the whole stack against local simulators (workerd + a local SQLite D1; SvelteKit's own vite dev server for the dashboard). It needs a Cloudflare identity — `alchemy profile edit --add Cloudflare` once, cached to `~/.alchemy`, the same one-time step as `wrangler login` — but touches nothing remote; real changes happen only on `alchemy deploy`.
 - **Two resources are `ALCHEMY_DEV`-guarded** because they have no local simulator and their providers reach the real account even in local mode:
   - the **Zero Trust / Access** resources (application, policies, service token) — so `alchemy dev` needs no Access org. The control-plane's JWT middleware already runs ungated when `CF_ACCESS_AUD` is absent (P6-03), which is exactly the local state.
   - the **Secrets Store** — locally `CLOUDFLARE_API_TOKEN` is a plain `secret_text` binding instead of a store secret. `resolveSecret` in the Worker flattens both shapes, so the code path is identical.
@@ -16,7 +16,7 @@ The control-plane API, the dashboard, their shared D1 database, the Cloudflare A
 
 ## Consequences
 
-Local dev now needs `alchemy login` once — a fresh clone can't `pnpm dev` before that. Accepted: it's the same shape as `wrangler login`, and it buys one build/dev/deploy path instead of two.
+Local dev now needs `alchemy profile edit --add Cloudflare` once — a fresh clone can't `pnpm dev` before that. Accepted: it's the same shape as `wrangler login`, and it buys one build/dev/deploy path instead of two.
 
 `alchemy deploy`, the Zero Trust org, the Google IdP, and the end-to-end verification (P6-06) can't be exercised in CI without the account — they're driven by `scripts/phase-6-deploy.sh` and remain unproven until the founder runs it. First validated on that deploy: the `Website.SvelteKit` adapter swap; the Secrets Store runtime binding shape; and whether `Website.SvelteKit`'s `env` reaches the dashboard's `$env/dynamic/public` read of `PUBLIC_CONTROL_PLANE_URL` at *build* time (an assets-only SPA inlines it) — if it doesn't, the deployed bundle keeps the `localhost:9003` fallback and the dashboard can't reach the API.
 
@@ -35,11 +35,12 @@ only bindings are `DB` and the two plain Access strings
 
 Alchemy's own deploy-time authentication (needed to create the Worker, D1
 database, and Access resources) no longer goes through a manually-minted API
-token either. `pnpm alchemy login --configure` → OAuth, with the default scopes
-customized to add `access:write` (Access isn't in Alchemy's default OAuth scope
-set; D1/Workers/Secrets-Store-adjacent scopes already are) — the resulting
-credentials are cached to `~/.alchemy/credentials` on the deploying machine,
-refresh automatically, and are never printed, pasted, or wired into a Worker.
+token either. `pnpm alchemy profile edit --add Cloudflare` → OAuth, with the
+default scopes customized to add `access:write` (Access isn't in Alchemy's
+default OAuth scope set; D1/Workers/Secrets-Store-adjacent scopes already are)
+— the resulting credentials are cached to `~/.alchemy/credentials` on the
+deploying machine, refresh automatically, and are never printed, pasted, or
+wired into a Worker.
 This replaces `scripts/phase-6-deploy.sh`'s old "create a Custom Token in the
 Cloudflare dashboard, paste it here" stage entirely: the claim that "login
 alone isn't enough for the Access + Secrets Store providers" (the reason that
@@ -48,6 +49,6 @@ supports arbitrary scope customization, it just isn't in the default set — and
 moot for Secrets Store now that nothing lives there.
 
 Net effect: the platform's Cloudflare credential surface is now exactly one
-thing — an OAuth session, local to whichever machine ran `alchemy login`, with
-exactly the scopes Alchemy's own resources need. No account-wide API token
+thing — an OAuth session, local to whichever machine connected Alchemy's
+Cloudflare profile, with exactly the scopes Alchemy's own resources need. No account-wide API token
 exists anywhere in this stack, deployed or otherwise.

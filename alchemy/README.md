@@ -6,9 +6,9 @@ the Cloudflare Access perimeter (Phase 6, P6-01/02). [Alchemy](https://alchemy.r
 owns build, dev, and deploy for both apps; there is one stage, `prod`.
 
 There is no Cloudflare API token anywhere in this stack or the deployed
-control-plane Worker. Alchemy authenticates as itself via `alchemy login`'s
-OAuth credentials (cached to `~/.alchemy`, on the deploying machine only) — see
-the "Local development" section below and ADR-0009's update.
+control-plane Worker. Alchemy authenticates as itself via its own Cloudflare
+profile's OAuth credentials (cached to `~/.alchemy`, on the deploying machine
+only) — see the "Local development" section below and ADR-0009's update.
 
 | File             | Resource                                                                         |
 | ---------------- | -------------------------------------------------------------------------------- |
@@ -25,14 +25,16 @@ vite dev server. Nothing touches the real account — but Alchemy needs a
 Cloudflare **identity** to run its providers, so do this once:
 
 ```sh
-pnpm alchemy login --configure   # OAuth, cached to ~/.alchemy — like `wrangler login`
+pnpm alchemy profile edit --add Cloudflare   # OAuth, cached to ~/.alchemy — like `wrangler login`
 ```
 
 Choose OAuth, then customize the scopes to add `access:write` — Alchemy's
 default OAuth scopes already cover Workers/D1, but not Access (needed to manage
-`Access.Application` / `Access.Policy` / `Access.ServiceToken`). This one login
-is everything a real `alchemy deploy` needs; no API token is minted or pasted
-anywhere.
+`Access.Application` / `Access.Policy` / `Access.ServiceToken`). This one
+connection is everything a real `alchemy deploy` needs; no API token is minted
+or pasted anywhere. Already connected but missing a scope (e.g. after an
+Alchemy upgrade)? `pnpm alchemy profile refresh --profile default --provider
+Cloudflare` re-prompts for scopes without disconnecting anything.
 
 The Access resources are `ALCHEMY_DEV`-guarded (no local simulator exists for
 them), so `alchemy dev` needs no Zero Trust org — the control-plane simply runs

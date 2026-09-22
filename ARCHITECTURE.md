@@ -41,7 +41,7 @@ Terms: [`Project`](./CONTEXT.md), [`Environment`](./CONTEXT.md), [`Stage`](./CON
 3. **Defense in depth**: the Worker itself verifies the Access JWT server-side rather than trusting the network path alone, so the app stays non-functional even if Access were ever misconfigured at the edge.
 4. **Read scoping**: the four control-plane reads that exist only for the dashboard (`GET /v1/projects`, its `/environments`, `GET /v1/environments/:id`, `GET /v1/deployments/:id`) require the verified Access JWT to carry an identity `email` claim — present for the founder's Google login, absent for a Service Token — so a leaked/shared CI credential can write only its own Project (surface #1) and can't read any Project's data at all. See ADR-0005's "read scoping" update.
 
-The control plane holds no Cloudflare API credential of its own at runtime (see ADR-0009's 2026-09 update) — its only bindings are `DB` and the plain Access strings (`CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`). Alchemy's own deploy-time Cloudflare authentication is a local OAuth session (`alchemy login`, cached to `~/.alchemy` on the deploying machine), never a Worker binding.
+The control plane holds no Cloudflare API credential of its own at runtime (see ADR-0009's 2026-09 update) — its only bindings are `DB` and the plain Access strings (`CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`). Alchemy's own deploy-time Cloudflare authentication is a local OAuth session (`alchemy profile`, cached to `~/.alchemy` on the deploying machine), never a Worker binding.
 
 ## Control-plane API & dashboard conventions
 
@@ -59,7 +59,7 @@ Adopted directly from Svelteflare's Hono/SvelteKit patterns — the reference re
 
 ## Local development
 
-From Phase 6 on, Alchemy (`alchemy.run.ts` + `alchemy/`, [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)) owns build, dev, and deploy for both apps. `pnpm dev` runs `alchemy dev`: the control-plane in the real `workerd` runtime, a local SQLite D1, and the dashboard on SvelteKit's own vite dev server — all against local simulators, nothing remote. It needs a Cloudflare identity once (`alchemy login`, cached to `~/.alchemy`, the same one-time step as `wrangler login`).
+From Phase 6 on, Alchemy (`alchemy.run.ts` + `alchemy/`, [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)) owns build, dev, and deploy for both apps. `pnpm dev` runs `alchemy dev`: the control-plane in the real `workerd` runtime, a local SQLite D1, and the dashboard on SvelteKit's own vite dev server — all against local simulators, nothing remote. It needs a Cloudflare identity once (`alchemy profile edit --add Cloudflare`, cached to `~/.alchemy`, the same one-time step as `wrangler login`).
 
 The Cloudflare Access resources are guarded out of `alchemy dev` (they have no local simulator), so local dev needs no Zero Trust org — the control-plane simply runs ungated locally, which its JWT middleware already handles.
 

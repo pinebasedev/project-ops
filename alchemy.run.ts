@@ -17,17 +17,17 @@ import { Database } from "./alchemy/Db.ts";
  * Access, never before (see docs/adr/0009 + docs/ROADMAP.md sequencing).
  *
  * `alchemy dev` runs the whole stack against local simulators (workerd + a
- * local D1) — it needs a Cloudflare identity (`alchemy login`, one time) but
- * touches nothing remote. The Zero Trust / Access resources are
- * `ALCHEMY_DEV`-guarded because they have no local simulator — the
- * control-plane's JWT middleware already runs ungated when `CF_ACCESS_AUD` is
- * absent.
+ * local D1) — it needs a Cloudflare identity (`alchemy profile edit --add
+ * Cloudflare`, one time) but touches nothing remote. The Zero Trust / Access
+ * resources are `ALCHEMY_DEV`-guarded because they have no local simulator —
+ * the control-plane's JWT middleware already runs ungated when
+ * `CF_ACCESS_AUD` is absent.
  *
  * There is no Cloudflare API token anywhere in this stack or the deployed
  * Worker (ADR-0009 update): Alchemy authenticates as itself
- * via `alchemy login`'s OAuth credentials, scoped and cached to the deploying
- * machine (`~/.alchemy`) — never a Worker binding, never minted by hand in the
- * Cloudflare dashboard.
+ * via its own Cloudflare profile's OAuth credentials, scoped and cached to
+ * the deploying machine (`~/.alchemy`) — never a Worker binding, never
+ * minted by hand in the Cloudflare dashboard.
  *
  * State: local filesystem for `alchemy dev` / manual runs; the Cloudflare-backed
  * remote store in CI. The real `alchemy deploy`, the Zero Trust org + Google IdP,
