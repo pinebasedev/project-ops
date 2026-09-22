@@ -184,7 +184,7 @@ finish() {
 # Replace the example below. Set TOTAL_STAGES to match the stages you write.
 # ──────────────────────────────────────────────────────────────────────────
 
-TOTAL_STAGES=7
+TOTAL_STAGES=6
 
 # Persist captured values at the repo root .env (gitignored). Alchemy reads it.
 ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
@@ -260,65 +260,54 @@ write_env CF_ACCESS_CLIENT_SECRET "$CF_ACCESS_CLIENT_SECRET"
 write_env DASHBOARD_ORIGIN "$DASHBOARD_URL"
 warn "DASHBOARD_ORIGIN just set — CORS stays unrestricted until you redeploy once more."
 
-# ── Stage 4: register demo-project, mint its token ────────────────────────
-stage "Register the managed project"
-say "demo-project needs its own per-project bearer token (P1-02/03). We register"
-say "it against the deployed control-plane, through the Access perimeter."
-ask DEMO_REPO "demo-project's GitHub slug (owner/repo):"
-say ""
-say "Running the registration call now:"
-REGISTER_RESP=$(curl -fsS -X POST "$IDP_API_URL/v1/projects" \
-  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d "$(printf '{"name":"demo-project","githubRepo":"%s"}' "$DEMO_REPO")" || true)
-if [[ -z "$REGISTER_RESP" ]]; then
-  warn "Registration call failed. Register by hand (same curl) and paste the token."
-  ask_secret IDP_PROJECT_TOKEN "demo-project control-plane token:"
-else
-  IDP_PROJECT_TOKEN=$(printf '%s' "$REGISTER_RESP" | jq -r '.token')
-  say "Registered. Token captured."
-fi
-write_env IDP_PROJECT_TOKEN "$IDP_PROJECT_TOKEN"
-
-# ── Stage 5: demo-project's own, narrowly-scoped Cloudflare token ─────────
-stage "demo-project's own Cloudflare token"
+# ── Stage 4: register demo-project + its own, narrowly-scoped CF token ────
+# There is no registration route on the control plane (deliberately: it has
+# zero token-issuance surface — see ADR-0001's "bearer-token provisioning"
+# update). demo-project's own bootstrap stack does the whole job in one shot:
+# mints its Cloudflare CI token, mints its control-plane bearer token, writes
+# the bearer token's hash straight into control-plane-db, and pushes all of
+# CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / IDP_PROJECT_TOKEN into this
+# repo's GitHub secrets itself via Alchemy's GitHub.Secret — nothing to paste
+# back into this wizard.
+stage "Register the managed project + its own Cloudflare token"
 say "demo-project's CI provisions only its own Worker + D1 database + R2 bucket"
 say "(see demo-project/alchemy/{Api,Db,Storage}.ts) — it never touches Access,"
 say "Secrets Store, or the Zero Trust org, so it doesn't need the platform"
 say "token's account-wide permissions. A separate, narrower token means a"
 say "compromised demo-project CI (or any future managed project's) can only"
 say "touch its own resources, not every Worker/D1/R2 on this account."
+ask DEMO_REPO "demo-project's GitHub slug (owner/repo):"
+write_env DEMO_REPO "$DEMO_REPO"
 say ""
 say "demo-project has its own bootstrap stack for this (alchemy/github.ts,"
 say "ADR-0001 'credential provisioning'): it mints a token scoped to exactly"
-say "Workers Scripts / D1 / Workers R2 Storage and pushes it straight into this"
-say "repo's GitHub secrets via Alchemy's GitHub.Secret — no dashboard"
-say "click-through, no raw token pasted into this wizard."
+say "Workers Scripts / D1 / Workers R2 Storage, mints demo-project's"
+say "control-plane bearer token and registers it directly in control-plane-db,"
+say "and pushes all three straight into this repo's GitHub secrets via"
+say "Alchemy's GitHub.Secret — no dashboard click-through, nothing to paste."
 pause "In demo-project: run 'CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID GITHUB_REPO=$DEMO_REPO pnpm bootstrap:github', then Enter when it finishes."
-say "That already set demo-project's CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
-say "repo secrets directly — nothing more to do for those two here."
+say "That already set demo-project's CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,"
+say "and IDP_PROJECT_TOKEN repo secrets directly — nothing more to do for those"
+say "three here."
 
-# ── Stage 6: demo-project repo secrets ────────────────────────────────────
+# ── Stage 5: demo-project's remaining GitHub secrets ──────────────────────
 stage "Set demo-project's remaining GitHub secrets"
-say "preview.yml (P6-05) sends the Access service token + bearer token on every"
-say "callback. CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID are already set (Stage"
-say "5, via alchemy/github.ts) — setting the rest on $DEMO_REPO now."
+say "preview.yml (P6-05) sends the Access service token on every callback."
+say "CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / IDP_PROJECT_TOKEN are already"
+say "set (Stage 4, via alchemy/github.ts) — setting the rest on $DEMO_REPO now."
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   gh secret   set CF_ACCESS_CLIENT_ID     --repo "$DEMO_REPO" --body "$CF_ACCESS_CLIENT_ID"     && say "✓ CF_ACCESS_CLIENT_ID"
   gh secret   set CF_ACCESS_CLIENT_SECRET --repo "$DEMO_REPO" --body "$CF_ACCESS_CLIENT_SECRET" && say "✓ CF_ACCESS_CLIENT_SECRET"
-  gh secret   set IDP_PROJECT_TOKEN       --repo "$DEMO_REPO" --body "$IDP_PROJECT_TOKEN"       && say "✓ IDP_PROJECT_TOKEN"
   gh variable set IDP_API_URL             --repo "$DEMO_REPO" --body "$IDP_API_URL"             && say "✓ IDP_API_URL (variable)"
 else
   warn "gh not authenticated. Run these yourself:"
   note "  gh secret set CF_ACCESS_CLIENT_ID --repo $DEMO_REPO"
   note "  gh secret set CF_ACCESS_CLIENT_SECRET --repo $DEMO_REPO"
-  note "  gh secret set IDP_PROJECT_TOKEN --repo $DEMO_REPO"
   note "  gh variable set IDP_API_URL --repo $DEMO_REPO --body $IDP_API_URL"
   SKIPPED+=("demo-project repo secrets/variable — see commands above")
 fi
 
-# ── Stage 7: end-to-end verification (P6-06) ──────────────────────────────
+# ── Stage 6: end-to-end verification (P6-06) ──────────────────────────────
 stage "Verify the whole chain (P6-06)"
 say "Open a real PR on demo-project and follow it through:"
 step "Push a branch and open a PR against 'staging'."
