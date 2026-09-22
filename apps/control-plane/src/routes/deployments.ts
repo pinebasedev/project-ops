@@ -8,6 +8,7 @@ import type { Env } from "../env";
 import { isUniqueConstraintError } from "../helpers/dbErrors";
 import { notFoundJson } from "../helpers/errors";
 import { bearerAuthMiddleware } from "../middleware/bearerAuth";
+import { requireIdentityMiddleware } from "../middleware/requireIdentity";
 
 // A Deployment is only visible to the project that owns its Environment — the
 // callback routes reject anything else with a 404 rather than leaking existence.
@@ -149,7 +150,9 @@ export const deploymentRoutes = new Hono<Env>()
       return c.json(updated, 200);
     },
   )
-  .get("/:id", async (c) => {
+  // Dashboard-only, like the reads in routes/projects.ts and
+  // routes/environments.ts — see ADR-0005's update.
+  .get("/:id", requireIdentityMiddleware, async (c) => {
     const deployment = await c.get("db").query.deployments.findFirst({
       where: eq(deployments.id, c.req.param("id")),
     });

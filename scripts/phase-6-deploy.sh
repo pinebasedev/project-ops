@@ -253,6 +253,12 @@ write_env IDP_API_URL "$IDP_API_URL"
 write_env DASHBOARD_URL "$DASHBOARD_URL"
 write_env CF_ACCESS_CLIENT_ID "$CF_ACCESS_CLIENT_ID"
 write_env CF_ACCESS_CLIENT_SECRET "$CF_ACCESS_CLIENT_SECRET"
+# CORS restriction (ADR-0005's read-scoping update) — same value as
+# DASHBOARD_URL for a bare Worker URL. Wasn't known before this deploy (the
+# dashboard had no URL yet), so the control-plane's CORS has been unrestricted
+# up to now; run 'pnpm alchemy deploy' again after this to lock it down.
+write_env DASHBOARD_ORIGIN "$DASHBOARD_URL"
+warn "DASHBOARD_ORIGIN just set — CORS stays unrestricted until you redeploy once more."
 
 # ── Stage 4: register demo-project, mint its token ────────────────────────
 stage "Register the managed project"

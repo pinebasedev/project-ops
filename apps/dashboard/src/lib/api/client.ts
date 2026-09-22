@@ -18,7 +18,12 @@ const baseUrl = env.PUBLIC_CONTROL_PLANE_URL ?? "http://localhost:9003";
  */
 export type ApiClient = ReturnType<typeof hc<AppType>>;
 
-export const api: ApiClient = hc<AppType>(baseUrl);
+// `credentials: "include"`: this is a cross-origin fetch (the dashboard and
+// the control plane are separate Workers/hostnames), and without it the
+// browser won't attach the Access session cookie — the control-plane's own
+// `cors()` middleware (`credentials: true`) is the other half of this, see
+// ADR-0005's update.
+export const api: ApiClient = hc<AppType>(baseUrl, { init: { credentials: "include" } });
 
 /**
  * A client pointed at an arbitrary base URL and `fetch`. Tests pass the

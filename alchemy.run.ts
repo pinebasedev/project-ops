@@ -43,18 +43,27 @@ export default Alchemy.Stack(
     const dev = yield* ALCHEMY_DEV;
     const database = yield* Database;
     const accessTeamDomain = yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team");
+    const dashboardOrigin = yield* stringOr("DASHBOARD_ORIGIN", "");
 
     // Zero Trust resources have no local simulator, so they're deploy-only.
     // The explicit `Access.Application` (rather than the inline `access:
     // { policies }` form) is what lets its AUD tag flow back into the Worker
     // for server-side JWT verification (P6-03).
+    //
+    // Both `allowCi` (the shared GitHub Actions service token) and `allowTeam`
+    // (the founder's Google login, already declared for the dashboard) sit on
+    // this one Application — Access only answers "can this reach the Worker at
+    // all," not "which kind of caller is this for which route." That split now
+    // happens server-side, off the verified JWT's `email` claim (present only
+    // for identity logins): see `middleware/requireIdentity.ts` and ADR-0005's
+    // 2026-09 update.
     const buildAccess = Effect.gen(function* () {
       const { serviceToken, allowTeam, allowCi } = yield* accessResources;
       const googleIdpId = yield* stringOr("CF_GOOGLE_IDP_ID", "dev-google-idp");
       const application = yield* Cloudflare.Access.Application("control-plane-access", {
         type: "self_hosted",
         name: "cloudflare-idp control-plane API",
-        policies: [allowCi],
+        policies: [allowCi, allowTeam],
         allowedIdps: [googleIdpId],
       });
       return { serviceToken, allowTeam, application, googleIdpId };
@@ -82,6 +91,12 @@ export default Alchemy.Stack(
       env: {
         DB: database,
         CF_ACCESS_TEAM_DOMAIN: accessTeamDomain,
+        // Not derived from `dashboard.url` below — that would be a circular
+        // dependency (dashboard's own env already depends on controlPlane.url).
+        // A manually-captured value instead, same as CF_ACCESS_TEAM_DOMAIN /
+        // CF_GOOGLE_IDP_ID. Empty locally: the CORS middleware treats that as
+        // "no restriction," matching every other ungated-in-dev behavior here.
+        DASHBOARD_ORIGIN: dashboardOrigin,
         ...(access ? { CF_ACCESS_AUD: access.application.aud } : {}),
       },
     });

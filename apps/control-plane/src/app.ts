@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type { MiddlewareHandler } from "hono";
 import { createDb, type Database } from "./db/client";
 import type { Env } from "./env";
@@ -26,6 +27,29 @@ export function createApp(overrides: AppOverrides = {}) {
   app.use("*", requestIdMiddleware);
   app.use("*", loggerMiddleware);
   app.use("*", secureHeadersMiddleware);
+
+  // Ahead of the Access gate: a CORS preflight (OPTIONS, no assertion header)
+  // has to succeed on its own for the browser to even attempt the real
+  // request — Hono's `cors()` answers it directly and never calls `next()`.
+  // Restricted to DASHBOARD_ORIGIN when set (ADR-0005 update); unrestricted
+  // when absent, same "ungated locally" fallback as the Access gate itself.
+  // `credentials: true` matters here: the dashboard's Access session cookie
+  // only reaches this cross-origin API at all if both this response header
+  // and the client's own fetch (`credentials: "include"`, see the dashboard's
+  // `lib/api/client.ts`) opt in.
+  app.use(
+    "/v1/*",
+    cors({
+      origin: (origin, c) => {
+        // `c.env` itself can be undefined outside a real Workers request
+        // (the in-process test transport), same as `accessJwtConfigFromEnv`
+        // below already has to account for.
+        const allowed = c.env?.DASHBOARD_ORIGIN;
+        return allowed ? (origin === allowed ? origin : null) : origin;
+      },
+      credentials: true,
+    }),
+  );
 
   // Cloudflare Access perimeter (ADR-0005, P6-03). Verifies the edge-supplied
   // JWT server-side on every `/v1` request except the health probe. The gate is

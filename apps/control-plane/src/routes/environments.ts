@@ -5,9 +5,16 @@ import {
   flattenLatestDeployment,
 } from "../helpers/environments";
 import { notFoundJson } from "../helpers/errors";
+import { requireIdentityMiddleware } from "../middleware/requireIdentity";
 
-export const environmentRoutes = new Hono<Env>().get("/:id", async (c) => {
-  const environment = await findEnvironmentWithLatestDeployment(c.get("db"), c.req.param("id"));
-  if (!environment) return notFoundJson(c);
-  return c.json(flattenLatestDeployment(environment));
-});
+// Dashboard-only, like the reads in routes/projects.ts — see that file's
+// comment and ADR-0005's update for why identity is required here.
+export const environmentRoutes = new Hono<Env>().get(
+  "/:id",
+  requireIdentityMiddleware,
+  async (c) => {
+    const environment = await findEnvironmentWithLatestDeployment(c.get("db"), c.req.param("id"));
+    if (!environment) return notFoundJson(c);
+    return c.json(flattenLatestDeployment(environment));
+  },
+);

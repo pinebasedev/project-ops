@@ -62,13 +62,41 @@ describe("createApp with the Access gate enabled", () => {
     expect(res.status).toBe(401);
   });
 
-  it("admits a request carrying a valid assertion", async () => {
-    const token = await signAccessToken(keypair.privateJwk);
+  it("admits an identity-authenticated request carrying a valid assertion", async () => {
+    const token = await signAccessToken(keypair.privateJwk, { email: "oros.stefan18@gmail.com" });
     const res = await (
       await gated()
     ).request("/v1/environments/does-not-exist", {
       headers: { [ACCESS_JWT_HEADER]: token },
     });
     expect(res.status).toBe(404);
+  });
+
+  // requireIdentityMiddleware (ADR-0005 update): a valid Access assertion
+  // alone isn't enough for these read routes — a service-token-authenticated
+  // caller (any managed project's CI, sharing one Access token) is past the
+  // base gate but still rejected, so it can't read another project's data.
+  it("rejects a service-token-authenticated request on a dashboard-only read", async () => {
+    const token = await signAccessToken(keypair.privateJwk); // no `email` claim
+    const app = await gated();
+
+    const list = await app.request("/v1/projects", { headers: { [ACCESS_JWT_HEADER]: token } });
+    expect(list.status).toBe(401);
+
+    const byId = await app.request("/v1/environments/does-not-exist", {
+      headers: { [ACCESS_JWT_HEADER]: token },
+    });
+    expect(byId.status).toBe(401);
+  });
+
+  it("admits an identity-authenticated request on a dashboard-only read", async () => {
+    const token = await signAccessToken(keypair.privateJwk, { email: "oros.stefan18@gmail.com" });
+    const res = await (
+      await gated()
+    ).request("/v1/projects", {
+      headers: { [ACCESS_JWT_HEADER]: token },
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([]);
   });
 });

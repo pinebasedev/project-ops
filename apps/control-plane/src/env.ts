@@ -15,6 +15,11 @@ export type Bindings = {
   // config (ADR-0009).
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
+  // The dashboard's own origin, for CORS on `/v1/*` (the dashboard is a
+  // client-rendered SPA calling this API cross-origin from the browser).
+  // Empty/absent means unrestricted — local `alchemy dev`'s dashboard runs on
+  // an unpredictable vite port, and nothing is enforced locally either way.
+  DASHBOARD_ORIGIN?: string;
 };
 
 export type Variables = {
