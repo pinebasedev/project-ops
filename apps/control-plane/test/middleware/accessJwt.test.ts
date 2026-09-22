@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { Env } from "../../src/env";
+import { loggerMiddleware } from "../../src/middleware/logger";
 import {
   ACCESS_JWT_HEADER,
   accessJwtConfigFromEnv,
@@ -93,6 +94,33 @@ describe("createAccessJwtMiddleware", () => {
     expect(fetchMock.mock.calls[0]![0]).toBe(
       "https://pinebase.cloudflareaccess.com/cdn-cgi/access/certs",
     );
+  });
+
+  it("never logs the raw token on a rejected assertion", async () => {
+    // Hono's JWT errors interpolate the raw token into `.message` (e.g.
+    // `token (${token}) expired`) — this guards against that ever reaching logs.
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const app = new Hono<Env>();
+    app.use("*", loggerMiddleware);
+    app.use(
+      "*",
+      createAccessJwtMiddleware({
+        teamDomain: "pinebase",
+        aud: TEST_AUD,
+        keys: [keypair.publicJwk],
+      }),
+    );
+    app.get("/whoami", (c) => c.json({ ok: true }));
+
+    const now = Math.floor(Date.now() / 1000);
+    const token = await signAccessToken(keypair.privateJwk, { iat: now - 7200, exp: now - 3600 });
+    const res = await app.request("/whoami", { headers: { [ACCESS_JWT_HEADER]: token } });
+
+    expect(res.status).toBe(401);
+    const logged = JSON.stringify(consoleError.mock.calls);
+    expect(logged).not.toContain(token);
+    for (const segment of token.split(".")) expect(logged).not.toContain(segment);
+    consoleError.mockRestore();
   });
 });
 

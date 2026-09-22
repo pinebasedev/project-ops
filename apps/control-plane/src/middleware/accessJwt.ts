@@ -63,7 +63,13 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
       });
       c.set("accessJwt", payload);
     } catch (err) {
-      c.get("logger")?.warn("access assertion rejected", { reason: "verification failed", err });
+      // Hono's JWT errors (`JwtTokenInvalid`, `JwtTokenExpired`, …) interpolate the
+      // raw token into `.message` — never log `err` itself, or the assertion ends
+      // up verbatim in Workers Logs.
+      c.get("logger")?.warn("access assertion rejected", {
+        reason: "verification failed",
+        errorName: err instanceof Error ? err.name : "UnknownError",
+      });
       return unauthorizedJson(c);
     }
 
