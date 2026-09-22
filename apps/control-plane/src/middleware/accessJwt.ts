@@ -73,8 +73,8 @@ export function createAccessJwtMiddleware(config: AccessJwtConfig): MiddlewareHa
 
 /**
  * Builds the middleware config from the Worker bindings, or null when either
- * value is absent — local `alchemy dev` runs ungated (mirrors
- * `observabilityFromEnv`); deployed stacks always set both (ADR-0009).
+ * value is absent — local `alchemy dev` runs ungated; deployed stacks always
+ * set both (ADR-0009).
  */
 export function accessJwtConfigFromEnv(
   env: Partial<Bindings> | undefined,

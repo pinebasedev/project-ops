@@ -1,16 +1,19 @@
 # Provisioning (Alchemy)
 
 `../alchemy.run.ts` + this folder describe the **platform's own** Cloudflare
-infrastructure — the control-plane API, the dashboard, their D1 database, the
-Cloudflare Access perimeter, and the control-plane's Secrets Store entry
-(Phase 6, P6-01/02/04). [Alchemy](https://alchemy.run) owns build, dev, and
-deploy for both apps; there is one stage, `prod`.
+infrastructure — the control-plane API, the dashboard, their D1 database, and
+the Cloudflare Access perimeter (Phase 6, P6-01/02). [Alchemy](https://alchemy.run)
+owns build, dev, and deploy for both apps; there is one stage, `prod`.
+
+There is no Cloudflare API token anywhere in this stack or the deployed
+control-plane Worker. Alchemy authenticates as itself via `alchemy login`'s
+OAuth credentials (cached to `~/.alchemy`, on the deploying machine only) — see
+the "Local development" section below and ADR-0009's update.
 
 | File             | Resource                                                                         |
 | ---------------- | -------------------------------------------------------------------------------- |
-| `config.ts`      | `stringOr` / `redactedOr` — a config value with a dev fallback                   |
+| `config.ts`      | `stringOr` — a config value with a dev fallback                                  |
 | `Db.ts`          | `control-plane-db` — D1, migrations applied from `apps/control-plane/migrations` |
-| `Secrets.ts`     | `CLOUDFLARE_API_TOKEN` in the account Secrets Store (deploy only)                |
 | `Access.ts`      | reusable Access policies + the GitHub Actions service token (deploy only)        |
 | `alchemy.run.ts` | the stack: D1 + control-plane Worker + dashboard, plus Access wiring on deploy   |
 
@@ -22,14 +25,18 @@ vite dev server. Nothing touches the real account — but Alchemy needs a
 Cloudflare **identity** to run its providers, so do this once:
 
 ```sh
-pnpm alchemy login          # OAuth, cached to ~/.alchemy — like `wrangler login`
+pnpm alchemy login --configure   # OAuth, cached to ~/.alchemy — like `wrangler login`
 ```
 
-The Access resources and the Secrets Store entry are `ALCHEMY_DEV`-guarded (no
-local simulator exists for either), so `alchemy dev` needs no Zero Trust org —
-the control-plane runs ungated locally, and `CLOUDFLARE_API_TOKEN` is a plain
-binding instead of a store secret. Put real values in a root `.env` if you want
-local observability queries to work; otherwise the dev fallbacks apply.
+Choose OAuth, then customize the scopes to add `access:write` — Alchemy's
+default OAuth scopes already cover Workers/D1, but not Access (needed to manage
+`Access.Application` / `Access.Policy` / `Access.ServiceToken`). This one login
+is everything a real `alchemy deploy` needs; no API token is minted or pasted
+anywhere.
+
+The Access resources are `ALCHEMY_DEV`-guarded (no local simulator exists for
+them), so `alchemy dev` needs no Zero Trust org — the control-plane simply runs
+ungated locally.
 
 ## Not yet proven with a real deploy
 
@@ -47,9 +54,6 @@ a real deploy settles:
   deploy it must reach the _build_. If `Website.SvelteKit`'s `env` only reaches
   the runtime, the bundle keeps its `http://localhost:9003` fallback (the
   control-plane's pinned `dev: { port: 9003 }`).
-- **Secrets Store binding shape** — on deploy the control-plane reads
-  `CLOUDFLARE_API_TOKEN` as a `SecretsStoreSecret` (`.get()`); `helpers/secrets.ts`
-  handles that and the local plain-string form.
 - **`CF_ACCESS_AUD`** is wired from the Access application's `aud` attribute into
   the control-plane Worker's env for server-side JWT verification (P6-03); the
   attribute name is from the Alchemy types, not a live response.

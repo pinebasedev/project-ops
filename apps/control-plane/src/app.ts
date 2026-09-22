@@ -3,7 +3,6 @@ import type { MiddlewareHandler } from "hono";
 import { createDb, type Database } from "./db/client";
 import type { Env } from "./env";
 import { notFound, onError } from "./helpers/errors";
-import { observabilityFromEnv, type ObservabilityClient } from "./helpers/observability";
 import { loggerMiddleware, requestIdMiddleware, secureHeadersMiddleware } from "./middleware";
 import {
   accessJwtConfigFromEnv,
@@ -16,9 +15,6 @@ export type AppOverrides = {
   // Injected directly in tests; in production each request builds its own
   // db from the D1 binding, since the binding only exists per-request.
   db?: Database;
-  // Injected in tests as a fake, or as `null` to exercise the not-configured
-  // path. In production it's built per-request from the Cloudflare API bindings.
-  observability?: ObservabilityClient | null;
   // Injected in tests (with `keys`), or `null` to force the Access gate off.
   // Absent → built from the `CF_ACCESS_*` bindings; null when they're unset.
   accessJwt?: AccessJwtConfig | null;
@@ -50,12 +46,6 @@ export function createApp(overrides: AppOverrides = {}) {
 
   app.use("*", async (c, next) => {
     c.set("db", overrides.db ?? createDb(c.env.DB));
-    c.set(
-      "observability",
-      "observability" in overrides
-        ? (overrides.observability ?? null)
-        : await observabilityFromEnv(c.env),
-    );
     await next();
   });
 

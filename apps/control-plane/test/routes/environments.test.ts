@@ -1,8 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createApp } from "../../src/app";
 import { deployments, environments, projects } from "../../src/db/schema";
-import type { ObservabilityClient } from "../../src/helpers/observability";
-import { ObservabilityError } from "../../src/helpers/observability";
 import { createTestDb } from "../helpers/db";
 
 async function seed(db: Awaited<ReturnType<typeof createTestDb>>) {
@@ -149,110 +147,5 @@ describe("GET /v1/environments/:id", () => {
 
     const res = await app.request("/v1/environments/nope");
     expect(res.status).toBe(404);
-  });
-});
-
-describe("GET /v1/environments/:id/errors", () => {
-  it("returns errors since the latest deployment, scoped to the environment's worker", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const recentErrors = vi
-      .fn()
-      .mockResolvedValue([
-        { timestamp: "2026-01-02T01:00:00.000Z", message: "boom", level: "error", requestId: "r1" },
-      ]);
-    const observability: ObservabilityClient = { recentErrors };
-    const app = createApp({ db, observability });
-
-    const res = await app.request("/v1/environments/env-1/errors");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      workerName: "svelteflare-pr-1",
-      since: "2026-01-02T00:00:00.000Z",
-      errors: [
-        { timestamp: "2026-01-02T01:00:00.000Z", message: "boom", level: "error", requestId: "r1" },
-      ],
-    });
-
-    expect(recentErrors).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workerName: "svelteflare-pr-1",
-        from: new Date("2026-01-02T00:00:00.000Z"),
-      }),
-    );
-  });
-
-  it("passes a bounded limit through from the query string", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const recentErrors = vi.fn().mockResolvedValue([]);
-    const app = createApp({ db, observability: { recentErrors } });
-
-    await app.request("/v1/environments/env-1/errors?limit=10");
-    expect(recentErrors).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
-  });
-
-  it("rejects a non-positive or oversized limit", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const app = createApp({ db, observability: { recentErrors: vi.fn() } });
-
-    expect((await app.request("/v1/environments/env-1/errors?limit=0")).status).toBe(400);
-    expect((await app.request("/v1/environments/env-1/errors?limit=5000")).status).toBe(400);
-  });
-
-  it("returns an empty result with a null window when the environment has never deployed", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const recentErrors = vi.fn();
-    const app = createApp({ db, observability: { recentErrors } });
-
-    const res = await app.request("/v1/environments/env-2/errors");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      workerName: "svelteflare-pr-2",
-      since: null,
-      errors: [],
-    });
-    expect(recentErrors).not.toHaveBeenCalled();
-  });
-
-  it("returns 404 for an unknown environment", async () => {
-    const db = await createTestDb();
-    const app = createApp({ db, observability: { recentErrors: vi.fn() } });
-
-    const res = await app.request("/v1/environments/nope/errors");
-    expect(res.status).toBe(404);
-  });
-
-  it("returns 503 when observability is not configured", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const app = createApp({ db, observability: null });
-
-    const res = await app.request("/v1/environments/env-1/errors");
-    expect(res.status).toBe(503);
-  });
-
-  it("returns 502 when the Telemetry API is unreachable", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const recentErrors = vi.fn().mockRejectedValue(new ObservabilityError("down"));
-    const app = createApp({ db, observability: { recentErrors } });
-
-    const res = await app.request("/v1/environments/env-1/errors");
-    expect(res.status).toBe(502);
-  });
-
-  it("returns 503 when the Telemetry API rejects the credentials", async () => {
-    const db = await createTestDb();
-    await seed(db);
-    const recentErrors = vi
-      .fn()
-      .mockRejectedValue(new ObservabilityError("bad token", { kind: "auth" }));
-    const app = createApp({ db, observability: { recentErrors } });
-
-    const res = await app.request("/v1/environments/env-1/errors");
-    expect(res.status).toBe(503);
   });
 });

@@ -184,7 +184,7 @@ finish() {
 # Replace the example below. Set TOTAL_STAGES to match the stages you write.
 # ──────────────────────────────────────────────────────────────────────────
 
-TOTAL_STAGES=8
+TOTAL_STAGES=7
 
 # Persist captured values at the repo root .env (gitignored). Alchemy reads it.
 ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
@@ -194,31 +194,22 @@ banner "Phase 6 — deploy the platform behind Cloudflare Access"
 # ── Stage 1: Alchemy identity ─────────────────────────────────────────────
 stage "Connect Alchemy to Cloudflare"
 say "One-time OAuth sign-in, cached to ~/.alchemy — the same idea as"
-say "'wrangler login'. This is also what 'pnpm dev' (alchemy dev) needs; it"
-say "authenticates you but changes nothing on the account."
-pause "Run 'pnpm alchemy login' in another terminal, finish the browser flow, then Enter."
-
-# ── Stage 2: Cloudflare account + API token ───────────────────────────────
-stage "Cloudflare: account ID + API token"
-say "The deploy also needs a scoped API token (login alone isn't enough for the"
-say "Access + Secrets Store providers). This token is also what the control-plane"
-say "uses to query Workers Observability (ADR-0004), so it lands in Secrets Store."
-open_url "https://dash.cloudflare.com/?to=/:account/workers-and-pages"
-step "Copy the Account ID from the right-hand sidebar (32 hex characters)."
-ask CLOUDFLARE_ACCOUNT_ID "Paste the account ID:"
-open_url "https://dash.cloudflare.com/profile/api-tokens"
-step "Create Token → Create Custom Token. Add these ACCOUNT permissions (Edit):"
-note "  Workers Scripts · D1 · Workers Observability · Workers R2 Storage ·"
-note "  Cloudflare Secrets Store · Access: Apps and Policies ·"
-note "  Access: Service Tokens · Access: Organizations, IdPs, and Groups"
-warn "Permission names drift — cross-check against Alchemy's Cloudflare docs if a"
-warn "deploy step 403s, then re-run this wizard (Enter keeps saved values)."
-step "Create the token and copy it (shown once)."
-ask_secret CLOUDFLARE_API_TOKEN "Paste the API token:"
+say "'wrangler login'. This is also what 'pnpm dev' (alchemy dev) needs."
+say "No Cloudflare API token is created or pasted anywhere: this OAuth session"
+say "is the only Cloudflare credential the deploy uses, and it never leaves"
+say "this machine (not a Worker binding, not a repo secret)."
+pause "Run 'pnpm alchemy login --configure' in another terminal, then Enter."
+step "Choose 'OAuth'."
+step "When asked 'Customize OAuth scopes?', say yes. Keep every pre-checked"
+step "default, and add 'access:write' — Alchemy needs it to manage the Access"
+step "application/policies/service token below, and it isn't in the defaults."
+step "Finish the browser sign-in."
+say ""
+say "The command prints your Cloudflare account ID when it finishes."
+ask CLOUDFLARE_ACCOUNT_ID "Paste the account ID alchemy login just printed:"
 write_env CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
-write_env CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
 
-# ── Stage 3: Zero Trust org + Google IdP ──────────────────────────────────
+# ── Stage 2: Zero Trust org + Google IdP ──────────────────────────────────
 stage "Cloudflare Zero Trust: team + Google login"
 say "The dashboard sits behind an interactive Google login; the API behind a"
 say "service token. Both live in your Zero Trust organization."
@@ -231,21 +222,21 @@ step "Settings → Authentication → Login methods → Add new → Google."
 note "Google needs an OAuth client (console.cloud.google.com → Credentials →"
 note "OAuth client ID → Web application). Redirect URI is shown on the Cloudflare"
 note "form. Save the client ID + secret into the Cloudflare Google IdP form."
-step "After saving, the Google IdP shows in the login-methods list. Get its UUID:"
-open_url "https://developers.cloudflare.com/api/resources/zero_trust/subresources/identity_providers/methods/list/"
-note "Easiest: run"
-note "  curl -s -H \"Authorization: Bearer \$CLOUDFLARE_API_TOKEN\" \\"
-note "    https://api.cloudflare.com/client/v4/accounts/\$CLOUDFLARE_ACCOUNT_ID/access/identity_providers \\"
-note "    | jq -r '.result[] | select(.type==\"google\") | .id'"
+step "After saving, click the Google method in the login-methods list to open"
+step "it — its UUID is the last path segment in the URL bar."
+note "If it's not there, the identity_providers list API has it too — use the"
+note "'Try it' console on Cloudflare's own API docs page (runs on your logged-in"
+note "dashboard session, no token needed): https://developers.cloudflare.com/api/resources/zero_trust/subresources/identity_providers/methods/list/"
 ask CF_GOOGLE_IDP_ID "Paste the Google IdP UUID:"
 write_env CF_ACCESS_TEAM_DOMAIN "$CF_ACCESS_TEAM_DOMAIN"
 write_env CF_GOOGLE_IDP_ID "$CF_GOOGLE_IDP_ID"
 
-# ── Stage 4: deploy the platform ──────────────────────────────────────────
+# ── Stage 3: deploy the platform ──────────────────────────────────────────
 stage "Deploy: alchemy deploy"
-say "Stands up: control-plane Worker, dashboard, D1 (+ migrations), the Access"
-say "application + service token, and the Secrets Store entry."
-note "Alchemy reads the .env this wizard just wrote, plus your ~/.alchemy login."
+say "Stands up: control-plane Worker, dashboard, D1 (+ migrations), and the"
+say "Access application + service token."
+note "Alchemy reads the .env this wizard just wrote, plus your ~/.alchemy login —"
+note "the only Cloudflare credential it uses."
 warn "The first deploy bootstraps the remote state store — approve the one prompt."
 warn "Not yet proven end to end (ADR-0009) — watch for adapter / binding errors."
 pause "Run 'pnpm alchemy deploy' now in another terminal. Enter when it finishes."
@@ -263,7 +254,7 @@ write_env DASHBOARD_URL "$DASHBOARD_URL"
 write_env CF_ACCESS_CLIENT_ID "$CF_ACCESS_CLIENT_ID"
 write_env CF_ACCESS_CLIENT_SECRET "$CF_ACCESS_CLIENT_SECRET"
 
-# ── Stage 5: register demo-project, mint its token ────────────────────────
+# ── Stage 4: register demo-project, mint its token ────────────────────────
 stage "Register the managed project"
 say "demo-project needs its own per-project bearer token (P1-02/03). We register"
 say "it against the deployed control-plane, through the Access perimeter."
@@ -284,7 +275,7 @@ else
 fi
 write_env IDP_PROJECT_TOKEN "$IDP_PROJECT_TOKEN"
 
-# ── Stage 6: demo-project's own, narrowly-scoped Cloudflare token ─────────
+# ── Stage 5: demo-project's own, narrowly-scoped Cloudflare token ─────────
 stage "demo-project's own Cloudflare token"
 say "demo-project's CI provisions only its own Worker + D1 database + R2 bucket"
 say "(see demo-project/alchemy/{Api,Db,Storage}.ts) — it never touches Access,"
@@ -302,11 +293,11 @@ pause "In demo-project: run 'CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID GITHUB
 say "That already set demo-project's CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
 say "repo secrets directly — nothing more to do for those two here."
 
-# ── Stage 7: demo-project repo secrets ────────────────────────────────────
+# ── Stage 6: demo-project repo secrets ────────────────────────────────────
 stage "Set demo-project's remaining GitHub secrets"
 say "preview.yml (P6-05) sends the Access service token + bearer token on every"
 say "callback. CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID are already set (Stage"
-say "6, via alchemy/github.ts) — setting the rest on $DEMO_REPO now."
+say "5, via alchemy/github.ts) — setting the rest on $DEMO_REPO now."
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   gh secret   set CF_ACCESS_CLIENT_ID     --repo "$DEMO_REPO" --body "$CF_ACCESS_CLIENT_ID"     && say "✓ CF_ACCESS_CLIENT_ID"
   gh secret   set CF_ACCESS_CLIENT_SECRET --repo "$DEMO_REPO" --body "$CF_ACCESS_CLIENT_SECRET" && say "✓ CF_ACCESS_CLIENT_SECRET"
@@ -321,7 +312,7 @@ else
   SKIPPED+=("demo-project repo secrets/variable — see commands above")
 fi
 
-# ── Stage 8: end-to-end verification (P6-06) ──────────────────────────────
+# ── Stage 7: end-to-end verification (P6-06) ──────────────────────────────
 stage "Verify the whole chain (P6-06)"
 say "Open a real PR on demo-project and follow it through:"
 step "Push a branch and open a PR against 'staging'."

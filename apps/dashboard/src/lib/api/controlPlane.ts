@@ -18,26 +18,6 @@ export type Deployment = NonNullable<Environment["latestDeployment"]>;
 
 export type EnvironmentKind = "ephemeral" | "staging" | "production";
 
-/** One error line, as the recent-errors panel renders it. */
-export type ObservedError = {
-  timestamp: string;
-  message: string;
-  level: string;
-  requestId: string | null;
-};
-
-/**
- * The recent-errors panel's data, as a discriminated result rather than a thrown
- * error: the Telemetry API is a soft dependency (ADR-0004), so a control plane
- * without credentials or an unreachable upstream degrades the panel, never the
- * whole environment page. Every other read here throws instead — a Project or
- * Environment that can't be fetched has no partial rendering to fall back on.
- */
-export type RecentErrors =
-  | { state: "ok"; workerName: string; since: string | null; errors: ObservedError[] }
-  | { state: "not-configured" }
-  | { state: "unavailable" };
-
 type JsonResponse = { ok: boolean; status: number; json(): Promise<unknown> };
 
 /**
@@ -115,31 +95,6 @@ export function createControlPlane(client: ApiClient = api) {
       const res = await client.v1.environments[":id"].$get({ param: { id: environmentId } });
       if (res.status === 404) throw error(404, "Environment not found");
       return readOk<EnvironmentDetail>(res);
-    },
-
-    async recentErrors(environmentId: string): Promise<RecentErrors> {
-      try {
-        const res = await client.v1.environments[":id"].errors.$get({
-          param: { id: environmentId },
-          query: {},
-        });
-
-        // 503 covers both "no credentials configured" and "credentials rejected" —
-        // either way the control plane can't answer, and retrying won't help.
-        if (res.status === 503) return { state: "not-configured" };
-        if (!res.ok) return { state: "unavailable" };
-
-        const body = await res.json();
-        if (!("workerName" in body)) return { state: "unavailable" };
-        return {
-          state: "ok",
-          workerName: body.workerName,
-          since: body.since,
-          errors: "errors" in body ? body.errors : [],
-        };
-      } catch {
-        return { state: "unavailable" };
-      }
     },
   };
 }

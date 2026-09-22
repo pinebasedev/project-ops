@@ -8,5 +8,6 @@ dist/
 !.env.example
 .DS_Store
 *.log
+*.swp
 .vite/
 .svelte-kit/

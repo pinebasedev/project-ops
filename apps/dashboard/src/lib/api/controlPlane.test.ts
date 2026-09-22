@@ -12,7 +12,7 @@ async function withRealControlPlane(): Promise<{
   db: Awaited<ReturnType<typeof createTestDb>>;
 }> {
   const db = await createTestDb();
-  const app = createApp({ db, observability: null, accessJwt: null });
+  const app = createApp({ db, accessJwt: null });
   const client = createApiClient("http://control-plane.test", async (input, init) =>
     app.request(input as RequestInfo, init as RequestInit),
   );
@@ -62,7 +62,7 @@ describe("against the real control plane", () => {
   it("returns an Environment recorded by a deployment callback, with its latest Deployment", async () => {
     const { controlPlane, db } = await withRealControlPlane();
     const { id: projectId, token } = await seedProject(db);
-    const app = createApp({ db, observability: null, accessJwt: null });
+    const app = createApp({ db, accessJwt: null });
 
     // Drive the real callback route the way demo-project's CI does (P1-08).
     const created = await app.request("/v1/deployments", {
@@ -95,23 +95,6 @@ describe("against the real control plane", () => {
 
     await expect(controlPlane.getEnvironmentOfKind(id, "staging")).resolves.toBeNull();
   });
-
-  it("degrades the errors panel when observability is not configured", async () => {
-    const { controlPlane, db } = await withRealControlPlane();
-    const { id: projectId, token } = await seedProject(db);
-    const app = createApp({ db, observability: null, accessJwt: null });
-    const created = await app.request("/v1/deployments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ stageName: "staging", kind: "staging", commitSha: "abc123" }),
-    });
-    const { environmentId } = (await created.json()) as { environmentId: string };
-    expect(projectId).toBeTruthy();
-
-    await expect(controlPlane.recentErrors(environmentId)).resolves.toEqual({
-      state: "not-configured",
-    });
-  });
 });
 
 describe("failure protocol", () => {
@@ -130,9 +113,5 @@ describe("failure protocol", () => {
       status: 401,
       body: { message: expect.stringContaining("Access session has expired") },
     });
-  });
-
-  it("never throws out of the errors panel, whatever the transport does", async () => {
-    await expect(withStatus(500).recentErrors("env-1")).resolves.toEqual({ state: "unavailable" });
   });
 });

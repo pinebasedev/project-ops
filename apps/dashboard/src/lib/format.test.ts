@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   environmentTitle,
-  formatEventTimestamp,
   githubCompareUrl,
   integrationTestPresentation,
   shortSha,
@@ -90,16 +89,6 @@ describe("githubCompareUrl", () => {
 
   it("returns null when both SHAs are the same — there is nothing to compare", () => {
     expect(githubCompareUrl("pinebase/demo-project", "aaa111", "aaa111")).toBeNull();
-  });
-});
-
-describe("formatEventTimestamp", () => {
-  it("renders an ISO timestamp as a fixed UTC string", () => {
-    expect(formatEventTimestamp("2026-01-02T01:00:00.000Z")).toBe("2026-01-02 01:00:00 UTC");
-  });
-
-  it("returns the input unchanged when it doesn't parse", () => {
-    expect(formatEventTimestamp("not-a-date")).toBe("not-a-date");
   });
 });
 

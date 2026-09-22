@@ -11,10 +11,9 @@
 //
 //   { level, message, time, requestId?, ...fields }
 //
-// `warn`/`error` go through `console.error` so they also land in the
-// stderr-backed stream the errors route queries (helpers/observability.ts);
-// `debug`/`info` go through `console.log`. Keep each line well under the
-// 256 KB per-log limit — don't dump request bodies or full DB rows.
+// `warn`/`error` go through `console.error` so they're indexed at error
+// severity; `debug`/`info` go through `console.log`. Keep each line well under
+// the 256 KB per-log limit — don't dump request bodies or full DB rows.
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 

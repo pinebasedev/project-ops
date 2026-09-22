@@ -6,12 +6,11 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { accessResources } from "./alchemy/Access.ts";
-import { redactedOr, stringOr } from "./alchemy/config.ts";
+import { stringOr } from "./alchemy/config.ts";
 import { Database } from "./alchemy/Db.ts";
-import { controlPlaneApiToken } from "./alchemy/Secrets.ts";
 
 /**
- * The platform provisioning its own infrastructure (Phase 6, P6-01/02/04): the
+ * The platform provisioning its own infrastructure (Phase 6, P6-01/02): the
  * control-plane Worker, the dashboard (a client-rendered SvelteKit SPA), their
  * shared D1 database, and — on deploy only — the Cloudflare Access perimeter.
  * This is where the platform is deployed for the first time, already behind
@@ -19,11 +18,16 @@ import { controlPlaneApiToken } from "./alchemy/Secrets.ts";
  *
  * `alchemy dev` runs the whole stack against local simulators (workerd + a
  * local D1) — it needs a Cloudflare identity (`alchemy login`, one time) but
- * touches nothing remote. Two things are `ALCHEMY_DEV`-guarded because they have
- * no local simulator: the Zero Trust / Access resources (the control-plane's JWT
- * middleware already runs ungated when `CF_ACCESS_AUD` is absent), and the
- * Secrets Store (locally `CLOUDFLARE_API_TOKEN` is a plain `secret_text` binding
- * instead — `resolveSecret` in the Worker handles both shapes).
+ * touches nothing remote. The Zero Trust / Access resources are
+ * `ALCHEMY_DEV`-guarded because they have no local simulator — the
+ * control-plane's JWT middleware already runs ungated when `CF_ACCESS_AUD` is
+ * absent.
+ *
+ * There is no Cloudflare API token anywhere in this stack or the deployed
+ * Worker (ADR-0009 update): Alchemy authenticates as itself
+ * via `alchemy login`'s OAuth credentials, scoped and cached to the deploying
+ * machine (`~/.alchemy`) — never a Worker binding, never minted by hand in the
+ * Cloudflare dashboard.
  *
  * State: local filesystem for `alchemy dev` / manual runs; the Cloudflare-backed
  * remote store in CI. The real `alchemy deploy`, the Zero Trust org + Google IdP,
@@ -39,11 +43,6 @@ export default Alchemy.Stack(
     const dev = yield* ALCHEMY_DEV;
     const database = yield* Database;
     const accessTeamDomain = yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team");
-    const cloudflareAccountId = stringOr("CLOUDFLARE_ACCOUNT_ID", "dev-account");
-
-    // Secrets Store: deploy-only (the store provider reads the real account even
-    // in local mode). Locally the token is a plain `secret_text` binding.
-    const apiToken = dev ? redactedOr("CLOUDFLARE_API_TOKEN", "") : yield* controlPlaneApiToken;
 
     // Zero Trust resources have no local simulator, so they're deploy-only.
     // The explicit `Access.Application` (rather than the inline `access:
@@ -82,8 +81,6 @@ export default Alchemy.Stack(
       ...(access ? { access: access.application } : {}),
       env: {
         DB: database,
-        CLOUDFLARE_API_TOKEN: apiToken,
-        CLOUDFLARE_ACCOUNT_ID: cloudflareAccountId,
         CF_ACCESS_TEAM_DOMAIN: accessTeamDomain,
         ...(access ? { CF_ACCESS_AUD: access.application.aud } : {}),
       },

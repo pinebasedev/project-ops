@@ -11,7 +11,6 @@ This document ties together the domain glossary ([`CONTEXT.md`](./CONTEXT.md)) a
 - **Dashboard** — Svelte, running as a separate Cloudflare Worker. Human-facing UI over the control-plane API.
 - **Alchemy** — provisions the actual Cloudflare infrastructure (Workers, D1, etc.) per Project/Environment, executed from each managed Project's own GitHub Actions, not from the control plane. See [ADR-0001](./docs/adr/0001-alchemy-provisioning-driven-by-github-actions.md).
 - **Cloudflare Access** — gates both the dashboard and the control-plane API. See [ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md).
-- **Cloudflare Workers Observability** — queried directly by the control plane for logs/errors; not relayed or duplicated. See [ADR-0004](./docs/adr/0004-query-observability-directly.md).
 
 The control plane never provisions infrastructure or drives deployments itself — it only observes and records what GitHub Actions and Alchemy do, and answers questions about that history.
 
@@ -41,7 +40,7 @@ Terms: [`Project`](./CONTEXT.md), [`Environment`](./CONTEXT.md), [`Stage`](./CON
 2. **Perimeter** (can this request reach either Worker at all): Cloudflare Access in front of both the dashboard and the control-plane API, declared as Alchemy resources in the same stack that provisions everything else — not a manual, skippable setup step. Interactive IdP login for the dashboard; an Access Service Token for GitHub Actions. See [ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md).
 3. **Defense in depth**: the Worker itself verifies the Access JWT server-side rather than trusting the network path alone, so the app stays non-functional even if Access were ever misconfigured at the edge.
 
-The control plane's own fixed operational secrets (Access-related credentials, the token used to query Workers Observability, etc.) live in Cloudflare Secrets Store — a different category from the per-project tokens above, since Secrets Store is for values the app reads at deploy time, not credentials created dynamically per Project at runtime.
+The control plane holds no Cloudflare API credential of its own at runtime (see ADR-0009's 2026-09 update) — its only bindings are `DB` and the plain Access strings (`CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`). Alchemy's own deploy-time Cloudflare authentication is a local OAuth session (`alchemy login`, cached to `~/.alchemy` on the deploying machine), never a Worker binding.
 
 ## Control-plane API & dashboard conventions
 
@@ -53,7 +52,7 @@ Adopted directly from Svelteflare's Hono/SvelteKit patterns — the reference re
 - **Typed client**: the dashboard calls the control-plane API via Hono's `AppType` export (an RPC-style client, `hc<AppType>()`) for end-to-end type safety with zero codegen. This couples the dashboard's build to the control-plane's types at compile time — accepted, since both live in the same pnpm workspace.
 - **Control-plane module**: page loaders never touch the RPC client directly. `lib/api/controlPlane.ts` is the dashboard's one interface onto the control plane — the five reads the views need — and absorbs the HTTP failure protocol (502 unreachable, 401 expired Access session, 404 missing) and the response-union narrowing. It takes its client as a parameter, so its tests run the real control-plane app in-process over an in-memory SQLite database (`control-plane/testing`) rather than mocking the transport.
 - **UI**: Tailwind + shadcn-svelte, built directly inside `apps/dashboard` — no separate shared `packages/ui`, since unlike Svelteflare this project has only one frontend to serve. Components installed via `pnpm dlx skills add huntabyte/shadcn-svelte` (plus the relevant Svelte skills), not hand-copied.
-- **Local secrets**: a gitignored root `.env` (optional) for the control plane's own fixed secrets during local development, mirroring what's held in Cloudflare Secrets Store once deployed; each has a dev fallback so `alchemy dev` runs without it.
+- **Local secrets**: a gitignored root `.env` (optional) for deploy-time config (the Access team domain, Google IdP id, allow-listed email); each has a dev fallback so `alchemy dev` runs without it. There is no application secret in this file — see "Auth" above.
 
 **Not adopted** from Svelteflare: better-auth, cookie/session-based login, and the Stripe/billing domain — all superseded by Cloudflare Access ([ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md)), which issues and manages its own session rather than the app rolling its own.
 
@@ -61,7 +60,7 @@ Adopted directly from Svelteflare's Hono/SvelteKit patterns — the reference re
 
 From Phase 6 on, Alchemy (`alchemy.run.ts` + `alchemy/`, [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)) owns build, dev, and deploy for both apps. `pnpm dev` runs `alchemy dev`: the control-plane in the real `workerd` runtime, a local SQLite D1, and the dashboard on SvelteKit's own vite dev server — all against local simulators, nothing remote. It needs a Cloudflare identity once (`alchemy login`, cached to `~/.alchemy`, the same one-time step as `wrangler login`).
 
-The Cloudflare Access resources and the Secrets Store entry are guarded out of `alchemy dev` (they have no local simulator), so local dev needs no Zero Trust org — the control-plane simply runs ungated locally, which its JWT middleware already handles.
+The Cloudflare Access resources are guarded out of `alchemy dev` (they have no local simulator), so local dev needs no Zero Trust org — the control-plane simply runs ungated locally, which its JWT middleware already handles.
 
 The dashboard is a client-rendered SPA (`ssr` disabled). On deploy Alchemy swaps in its own Cloudflare adapter; the `@sveltejs/adapter-static` config stays for `svelte-check` and a standalone `vite build`.
 
@@ -80,8 +79,3 @@ No dedicated AI or agent interface in this version — no dashboard chat, no MCP
 ## Implementation
 
 Full build-order ticket sequence: [`docs/ROADMAP.md`](./docs/ROADMAP.md).
-
-## Open items
-
-Not yet settled — flagged here so they aren't silently assumed:
-- Plan-tier/retention limits of the Workers Observability Telemetry API — noted as unconfirmed in [ADR-0004](./docs/adr/0004-query-observability-directly.md), worth checking before relying on it.
