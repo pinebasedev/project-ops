@@ -20,6 +20,6 @@ import * as Cloudflare from "alchemy/Cloudflare";
  * match.
  */
 export const Database = Cloudflare.D1.Database("control-plane-db", {
-  name: "control-plane-db",
+  name: "production-control-plane-db",
   migrations: "./apps/control-plane/migrations",
 });

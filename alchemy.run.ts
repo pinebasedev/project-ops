@@ -71,6 +71,7 @@ export default Alchemy.Stack(
     const access = dev ? null : yield* buildAccess;
 
     const controlPlane = yield* Cloudflare.Worker("control-plane", {
+      name: "production-control-plane",
       main: "./apps/control-plane/src/index.ts",
       compatibility: { flags: ["nodejs_compat"], date: "2026-09-05" },
       // Workers Logs: the control plane's structured `console.log`/`console.error`
@@ -102,6 +103,7 @@ export default Alchemy.Stack(
     });
 
     const dashboard = yield* Cloudflare.Website.SvelteKit("dashboard", {
+      name: "production-dashboard",
       rootDir: "./apps/dashboard",
       // Client-rendered SPA (`ssr = false`): deep links fall back to index.html
       // and the client router takes over.
