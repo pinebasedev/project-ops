@@ -1,12 +1,12 @@
-import { env } from "$env/dynamic/public";
 import type { AppType } from "control-plane/app";
 import { hc } from "hono/client";
 
-// The control-plane API base URL. `alchemy dev` / `alchemy deploy` wire the real
-// URL in as PUBLIC_CONTROL_PLANE_URL (see `alchemy.run.ts`); the fallback is the
-// control-plane's pinned local port (`dev: { port: 9003 }` there), for a
-// standalone `vite dev` of just this app.
-const baseUrl = env.PUBLIC_CONTROL_PLANE_URL ?? "http://localhost:9003";
+// The control plane is mounted same-origin at `/v1/*` (see `+server.ts` under
+// `routes/v1/[...rest]`, and ADR-0009's dashboard+control-plane merge update)
+// — no base URL to configure, and no cross-origin credentials opt-in needed:
+// the browser sends the Access session cookie to same-origin requests as a
+// matter of course.
+const baseUrl = "/";
 
 /**
  * End-to-end typed RPC client for the control-plane API, derived from its Hono
@@ -18,12 +18,7 @@ const baseUrl = env.PUBLIC_CONTROL_PLANE_URL ?? "http://localhost:9003";
  */
 export type ApiClient = ReturnType<typeof hc<AppType>>;
 
-// `credentials: "include"`: this is a cross-origin fetch (the dashboard and
-// the control plane are separate Workers/hostnames), and without it the
-// browser won't attach the Access session cookie — the control-plane's own
-// `cors()` middleware (`credentials: true`) is the other half of this, see
-// ADR-0005's update.
-export const api: ApiClient = hc<AppType>(baseUrl, { init: { credentials: "include" } });
+export const api: ApiClient = hc<AppType>(baseUrl);
 
 /**
  * A client pointed at an arbitrary base URL and `fetch`. Tests pass the

@@ -241,8 +241,8 @@ write_env CF_GOOGLE_IDP_ID "$CF_GOOGLE_IDP_ID"
 
 # ── Stage 3: deploy the platform ──────────────────────────────────────────
 stage "Deploy: alchemy deploy"
-say "Stands up: control-plane Worker, dashboard, D1 (+ migrations), and the"
-say "Access application + service token."
+say "Stands up: one dashboard + control-plane Worker, D1 (+ migrations), and"
+say "the Access application + service token."
 note "Alchemy reads the .env this wizard just wrote, plus your ~/.alchemy profile —"
 note "the only Cloudflare credential it uses."
 warn "The first deploy bootstraps the remote state store — approve the one prompt."
@@ -250,23 +250,21 @@ warn "Not yet proven end to end (ADR-0009) — watch for adapter / binding error
 pause "Run 'pnpm alchemy deploy' now in another terminal. Enter when it finishes."
 say ""
 say "From the deploy output ('return { ... }' / the resource table):"
-ask IDP_API_URL "control-plane URL (controlPlaneUrl):"
-ask DASHBOARD_URL "dashboard URL (dashboardUrl):"
+ask DASHBOARD_URL "app URL (dashboardUrl) - serves both the dashboard and the API at /v1/*:"
 step "The Access service token client id + secret are printed once by Cloudflare"
 step "(serviceTokenClientId in the output; the secret in the deploy log or the"
 step "Zero Trust dashboard → Access → Service Tokens)."
 ask CF_ACCESS_CLIENT_ID "Service token Client ID:"
 ask_secret CF_ACCESS_CLIENT_SECRET "Service token Client Secret:"
-write_env IDP_API_URL "$IDP_API_URL"
+# IDP_API_URL is the control-plane callback base URL demo-project's CI needs —
+# same host as DASHBOARD_URL now that they're one Worker (ADR-0009). Set as a
+# shell variable too (not just written to .env), since Stage 5 references
+# $IDP_API_URL directly.
+IDP_API_URL="$DASHBOARD_URL"
+write_env IDP_API_URL "$DASHBOARD_URL"
 write_env DASHBOARD_URL "$DASHBOARD_URL"
 write_env CF_ACCESS_CLIENT_ID "$CF_ACCESS_CLIENT_ID"
 write_env CF_ACCESS_CLIENT_SECRET "$CF_ACCESS_CLIENT_SECRET"
-# CORS restriction (ADR-0005's read-scoping update) — same value as
-# DASHBOARD_URL for a bare Worker URL. Wasn't known before this deploy (the
-# dashboard had no URL yet), so the control-plane's CORS has been unrestricted
-# up to now; run 'pnpm alchemy deploy' again after this to lock it down.
-write_env DASHBOARD_ORIGIN "$DASHBOARD_URL"
-warn "DASHBOARD_ORIGIN just set — CORS stays unrestricted until you redeploy once more."
 
 # ── Stage 4: register demo-project + its own, narrowly-scoped CF token ────
 # There is no registration route on the control plane (deliberately: it has

@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./app": "./src/app.ts",
+    "./env": "./src/env.ts",
     "./testing": "./test/helpers/db.ts"
   },
   "scripts": {

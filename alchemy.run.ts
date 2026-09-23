@@ -1,7 +1,6 @@
 import * as Alchemy from "alchemy";
 import { ALCHEMY_DEV } from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Output from "alchemy/Output";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
@@ -10,11 +9,12 @@ import { stringOr } from "./alchemy/config.ts";
 import { Database } from "./alchemy/Db.ts";
 
 /**
- * The platform provisioning its own infrastructure (Phase 6, P6-01/02): the
- * control-plane Worker, the dashboard (a client-rendered SvelteKit SPA), their
- * shared D1 database, and — on deploy only — the Cloudflare Access perimeter.
- * This is where the platform is deployed for the first time, already behind
- * Access, never before (see docs/adr/0009 + docs/ROADMAP.md sequencing).
+ * The platform provisioning its own infrastructure (Phase 6, P6-01/02): one
+ * SvelteKit Worker (the dashboard UI plus the control-plane API, mounted
+ * same-origin at `/v1/*` — see docs/adr/0009's merge update), its D1
+ * database, and — on deploy only — the Cloudflare Access perimeter. This is
+ * where the platform is deployed for the first time, already behind Access,
+ * never before (see docs/adr/0009 + docs/ROADMAP.md sequencing).
  *
  * `alchemy dev` runs the whole stack against local simulators (workerd + a
  * local D1) — it needs a Cloudflare identity (`alchemy profile edit --add
@@ -43,7 +43,6 @@ export default Alchemy.Stack(
     const dev = yield* ALCHEMY_DEV;
     const database = yield* Database;
     const accessTeamDomain = yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team");
-    const dashboardOrigin = yield* stringOr("DASHBOARD_ORIGIN", "");
 
     // Zero Trust resources have no local simulator, so they're deploy-only.
     // The explicit `Access.Application` (rather than the inline `access:
@@ -51,80 +50,62 @@ export default Alchemy.Stack(
     // for server-side JWT verification (P6-03).
     //
     // Both `allowCi` (the shared GitHub Actions service token) and `allowTeam`
-    // (the founder's Google login, already declared for the dashboard) sit on
-    // this one Application — Access only answers "can this reach the Worker at
-    // all," not "which kind of caller is this for which route." That split now
+    // (the founder's Google login) sit on this one Application, gating the
+    // whole merged Worker — Access only answers "can this reach the Worker at
+    // all," not "which kind of caller is this for which route." That split
     // happens server-side, off the verified JWT's `email` claim (present only
     // for identity logins): see `middleware/requireIdentity.ts` and ADR-0005's
-    // 2026-09 update.
+    // 2026-09 merge update. (Consequence, accepted there: a CI service token
+    // can now also load the dashboard's pages — its `/v1` reads still 401 via
+    // `requireIdentityMiddleware`, same as before the merge.)
     const buildAccess = Effect.gen(function* () {
       const { serviceToken, allowTeam, allowCi } = yield* accessResources;
       const googleIdpId = yield* stringOr("CF_GOOGLE_IDP_ID", "dev-google-idp");
-      const application = yield* Cloudflare.Access.Application("control-plane-access", {
+      const application = yield* Cloudflare.Access.Application("app-access", {
         type: "self_hosted",
-        name: "cloudflare-idp control-plane API",
+        name: "cloudflare-idp platform",
         policies: [allowCi, allowTeam],
         allowedIdps: [googleIdpId],
+        autoRedirectToIdentity: true,
       });
-      return { serviceToken, allowTeam, application, googleIdpId };
+      return { serviceToken, application };
     });
     const access = dev ? null : yield* buildAccess;
 
-    const controlPlane = yield* Cloudflare.Worker("control-plane", {
-      name: "production-control-plane",
-      main: "./apps/control-plane/src/index.ts",
+    // One SvelteKit Worker: the dashboard UI (client-rendered, `ssr = false`)
+    // plus the control-plane API, mounted same-origin at `/v1/*` via
+    // `apps/dashboard/src/routes/v1/[...rest]/+server.ts` (ADR-0009's merge
+    // update). `apps/control-plane` is now a workspace-internal library, not
+    // its own deploy target.
+    const app = yield* Cloudflare.Website.SvelteKit("dashboard", {
+      name: "production-dashboard",
+      rootDir: "./apps/dashboard",
       compatibility: { flags: ["nodejs_compat"], date: "2026-09-05" },
-      // Workers Logs: the control plane's structured `console.log`/`console.error`
-      // lines (helpers/logger.ts) plus one invocation log per request, indexed
-      // and queryable in the dashboard. On by default in Alchemy; set explicitly
-      // so the sampling rate is visible here. Keep at 1 — the control plane is
-      // low-traffic (one GitHub Actions run per deploy) and every request matters.
+      // Workers Logs: the control-plane routes' structured `console.log`/
+      // `console.error` lines (helpers/logger.ts) plus one invocation log per
+      // request, indexed and queryable in the dashboard. On by default in
+      // Alchemy; set explicitly so the sampling rate is visible here. Keep at
+      // 1 — this is low-traffic (one GitHub Actions run per deploy, plus the
+      // founder's own dashboard use) and every request matters.
       observability: {
         enabled: true,
         headSamplingRate: 1,
         logs: { enabled: true, invocationLogs: true },
       },
-      // Pin the local port so the dashboard's `$env/dynamic/public` fallback in
-      // `apps/dashboard/src/lib/api/client.ts` stays correct for a standalone
-      // `vite dev`; under `alchemy dev` the real URL is wired through instead.
-      dev: { port: 9003 },
+      // Deep links fall back to index.html and the client router takes over
+      // for dashboard pages; `/v1/*` requests hit the Worker's own routing
+      // (the `+server.ts` catch-all) before ever reaching this fallback.
+      assets: { notFoundHandling: "single-page-application" },
       ...(access ? { access: access.application } : {}),
       env: {
         DB: database,
         CF_ACCESS_TEAM_DOMAIN: accessTeamDomain,
-        // Not derived from `dashboard.url` below — that would be a circular
-        // dependency (dashboard's own env already depends on controlPlane.url).
-        // A manually-captured value instead, same as CF_ACCESS_TEAM_DOMAIN /
-        // CF_GOOGLE_IDP_ID. Empty locally: the CORS middleware treats that as
-        // "no restriction," matching every other ungated-in-dev behavior here.
-        DASHBOARD_ORIGIN: dashboardOrigin,
         ...(access ? { CF_ACCESS_AUD: access.application.aud } : {}),
       },
     });
 
-    const dashboard = yield* Cloudflare.Website.SvelteKit("dashboard", {
-      name: "production-dashboard",
-      rootDir: "./apps/dashboard",
-      // Client-rendered SPA (`ssr = false`): deep links fall back to index.html
-      // and the client router takes over.
-      assets: { notFoundHandling: "single-page-application" },
-      ...(access
-        ? {
-            access: {
-              policies: [access.allowTeam],
-              allowedIdps: [access.googleIdpId],
-              autoRedirectToIdentity: true,
-            },
-          }
-        : {}),
-      env: {
-        PUBLIC_CONTROL_PLANE_URL: Output.interpolate`${controlPlane.url}`,
-      },
-    });
-
     return {
-      controlPlaneUrl: controlPlane.url,
-      dashboardUrl: dashboard.url,
+      dashboardUrl: app.url,
       // Paste these into the deploy wizard when it asks (deploy only).
       ...(access
         ? { accessAud: access.application.aud, serviceTokenClientId: access.serviceToken.clientId }

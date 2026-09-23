@@ -12,9 +12,10 @@ import { stringOr } from "./config.ts";
  *     `clientId` / `clientSecret` become `CF_ACCESS_CLIENT_ID` /
  *     `CF_ACCESS_CLIENT_SECRET` repo secrets on each managed project (P6-05).
  *
- * The applications themselves are declared where the Workers are (via each
- * Worker's `access` prop / an explicit `Access.Application`), so these are just
- * the reusable policies plus the token.
+ * The Application itself is declared where the Worker is (`alchemy.run.ts`,
+ * via its `access` prop / an explicit `Access.Application` — see ADR-0009's
+ * merge update, one Worker now, not two), so these are just the reusable
+ * policies plus the token.
  */
 export const accessResources = Effect.gen(function* () {
   // Who may log in to the dashboard. Defaults to the founder; a self-hoster
