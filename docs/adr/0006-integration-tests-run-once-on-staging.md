@@ -11,3 +11,12 @@ Running Integration Tests on every PR push was the original plan, and it's what 
 ## Consequences
 
 Integration failures are now caught **after** a PR has already merged into `staging`, not before — recovery is a revert or fix-forward, not a blocked merge. The target question "which integration tests failed for this PR?" is answered via the staging Deployment that resulted from merging it, not a dedicated per-PR run. Because promotion (`staging` → `main`) is a plain git merge with no automated test gate (ADR-0002), the dashboard surfacing staging's current Integration Test status is what actually prevents someone from promoting a broken state — this makes that dashboard signal load-bearing, not cosmetic.
+
+## Update (2026-09, test-suite support deferred)
+
+This ADR decides *when* the live suite runs, not what it's made of — that part (P3-03, demo-project repo) is intentionally deferred to a future update, not scoped yet. Two layers are wanted, not just the one this ADR describes:
+
+- **The live suite this ADR governs** — real HTTP against the deployed `staging` URL, through whatever's actually in front of it (Cloudflare Access included). Closer to what's usually called an **e2e** test by industry convention (external, black-box, against a fully deployed artifact) than "integration" in the stricter sense, even though this repo's naming (this ADR, the `deployments` table's `integration_tests_*` columns, the control-plane's `/integration-results` route, the dashboard panel) calls it "Integration Test" throughout. Needs its own Access service-token credential to clear the perimeter, since `staging` is gated (ADR-0005) — CI has no browser for an interactive login.
+- **A true integration layer** (not yet designed) — the app's own code exercised in-process against a local D1, no network, no deployed infra. `apps/api/src/middleware/auth.ts`'s `AppTestOverrides` (`createDb`, `createAuth`, `resolveSession`, `resolveSubscription`) already gives this a seam to inject a local test DB — the app was built for it, even though nothing uses it yet. This layer is cheap enough to run on every PR, gating merges the way the live suite structurally can't (see "Considered Options" above).
+
+Both are wanted together — the live suite alone was implemented once already (2026-09-23) and rolled back, specifically to land as one coherent piece with the integration layer rather than in two passes. Revisit this ADR (and P3-03) when that's scoped.
