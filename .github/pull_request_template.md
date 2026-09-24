@@ -1,0 +1,18 @@
+> [!IMPORTANT]
+> Small, clearly correct fixes only. For features, refactors, or design changes,
+> [open a discussion](https://github.com/pinebasedev/project-ops/discussions) first. See [CONTRIBUTING.md](https://github.com/pinebasedev/project-ops/blob/main/CONTRIBUTING.md).
+
+## What does this change?
+
+<!-- The concrete problem, and how this patch fixes it. Link the issue if there is one. -->
+
+## Why is it correct?
+
+<!-- How a reviewer can confirm the change's full effect by reading the patch. -->
+
+## Checklist
+
+- [ ] This is a small, focused change: not a feature, a refactor, or a cosmetic cleanup.
+- [ ] `pnpm check && pnpm test && pnpm lint && pnpm format:check` pass locally.
+- [ ] Commits follow the Conventional Commits rules in CONTRIBUTING.md.
+- [ ] If this changes an accepted ADR's decision, it adds a new ADR.
