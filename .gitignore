@@ -11,3 +11,6 @@ dist/
 *.swp
 .vite/
 .svelte-kit/
+# Third-party agent skills: not vendored. Restore them from each directory's
+# skills-lock.json with `pnpm dlx skills experimental_install`.
+**/.claude/skills/
