@@ -246,27 +246,51 @@ write_env CF_GOOGLE_IDP_ID "$CF_GOOGLE_IDP_ID"
 write_env CF_ACCESS_ALLOW_EMAIL "$CF_ACCESS_ALLOW_EMAIL"
 
 # ── Stage 3: deploy the platform ──────────────────────────────────────────
+# A fixed stage, so the state path below is known (Alchemy's default is
+# live_$USER, which differs per operator).
+DEPLOY_STAGE=production
+STATE_DIR="$(dirname "$ENV_FILE")/.alchemy/state/project-ops/$DEPLOY_STAGE"
+
+# _state FILE PATH prints a string at a dotted PATH in one of Alchemy's local
+# state files; fails if it's missing.
+_state() {
+  node -e '
+    let v = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+    for (const k of process.argv[2].split(".")) v = v?.[k];
+    if (typeof v !== "string" || !v) process.exit(1);
+    process.stdout.write(v);
+  ' "$STATE_DIR/$1" "$2" 2>/dev/null
+}
+
 stage "Deploy: alchemy deploy"
 say "Stands up: one dashboard + control-plane Worker, D1 (+ migrations), and"
 say "the Access application + service token."
 note "Alchemy reads the .env this wizard just wrote, plus your ~/.alchemy profile —"
 note "the only Cloudflare credential it uses."
-warn "The first deploy bootstraps the remote state store — approve the one prompt."
-pause "Run 'pnpm alchemy deploy' now in another terminal. Enter when it finishes."
+say "In another terminal, from the repo root:"
+note "  pnpm alchemy deploy --stage $DEPLOY_STAGE"
+pause "Enter when it finishes."
 say ""
-say "From the deploy output ('return { ... }' / the resource table):"
-ask DASHBOARD_URL "app URL (dashboardUrl) - serves both the dashboard and the API at /v1/*:"
-step "The Access service token's client id is 'serviceTokenClientId' in the"
-step "output. Cloudflare shows its secret only once, in the deploy log."
-ask CF_ACCESS_CLIENT_ID "Service token Client ID:"
-ask_secret CF_ACCESS_CLIENT_SECRET "Service token Client Secret:"
-# Kept in the gitignored .env on purpose: Cloudflare never shows the secret
-# again, and scripts/onboard-project.sh needs it for every managed project.
+# Cloudflare returns the service token's secret only on create, and Alchemy
+# prints it redacted. It keeps it in its local state, so read the URL, client
+# id, and secret from there: the secret goes to .env without being shown.
+DASHBOARD_URL=$(_state __stack_output__.json dashboardUrl || true)
+CF_ACCESS_CLIENT_ID=$(_state github-actions.json attr.clientId || true)
+CF_ACCESS_CLIENT_SECRET=$(_state github-actions.json attr.clientSecret.__redacted__ || true)
+if [[ -z "$DASHBOARD_URL" || -z "$CF_ACCESS_CLIENT_ID" || -z "$CF_ACCESS_CLIENT_SECRET" ]]; then
+  warn "Couldn't read the deploy's outputs from $STATE_DIR."
+  warn "Did the deploy finish, from the repo root, with --stage $DEPLOY_STAGE? Fix that and"
+  warn "re-run this wizard (Enter keeps the values already saved)."
+  exit 1
+fi
+say "✓ read the dashboard URL and the service token from Alchemy's state"
+# Kept in the gitignored .env: scripts/onboard-project.sh needs it for every
+# managed project.
 write_env DASHBOARD_URL "$DASHBOARD_URL"
 write_env CF_ACCESS_CLIENT_ID "$CF_ACCESS_CLIENT_ID"
 write_env CF_ACCESS_CLIENT_SECRET "$CF_ACCESS_CLIENT_SECRET"
-warn "The service token secret is now stored in $ENV_FILE (gitignored). Keep that"
-warn "file private; it is the only copy."
+warn "The service token secret is now in $ENV_FILE and in $STATE_DIR (both"
+warn "gitignored). Keep them private."
 say ""
 step "Open the dashboard and log in with Google:"
 open_url "$DASHBOARD_URL"

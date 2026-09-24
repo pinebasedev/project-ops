@@ -228,26 +228,69 @@ say "The project mints its own narrowly scoped Cloudflare token and its"
 say "control-plane bearer token, and pushes both straight into its GitHub"
 say "secrets — nothing to paste back here (ADR-0010)."
 say ""
-say "That stack needs Alchemy's GitHub provider connected on this machine. If"
-say "'gh' is authenticated it's a one-line registration, not a second login:"
-note "  pnpm alchemy profile edit --profile default --add GitHub"
-note "  (choose the recommended 'gh CLI' method when it asks)"
-say ""
-warn "Minting the CI token needs a SECOND Cloudflare profile — 'default' isn't"
-warn "enough, and no scope fixes this: Cloudflare's token-creation endpoint"
-warn "refuses OAuth sessions (what the deploy wizard's default profile is)."
-say "One-time setup:"
+say "It runs under a separate Alchemy profile, 'admin', set up once per machine:"
+warn "Minting the CI token needs a Cloudflare profile with a stored API token:"
+warn "Cloudflare's token-creation endpoint refuses OAuth sessions (what the"
+warn "deploy wizard's default profile is), and no scope fixes that."
 step "Cloudflare dashboard -> My Profile -> API Tokens -> Create Token ->"
 step "Custom Token, scoped to just 'API Tokens: Edit' (nothing else)."
 note "  pnpm alchemy profile edit --profile admin --add Cloudflare"
 note "  (choose 'Stored', not OAuth — paste the token from the step above)"
+step "Connect GitHub to the same profile; with 'gh' logged in it's no new login:"
+note "  pnpm alchemy profile edit --profile admin --add GitHub"
+note "  (choose the recommended 'gh CLI' method)"
+step "The bearer token's hash is written with 'wrangler d1 execute', which has"
+step "its own login: 'wrangler whoami' should show this account."
 say ""
 CLOUDFLARE_ACCOUNT_ID=$(_existing CLOUDFLARE_ACCOUNT_ID || true)
-say "In the project's checkout, run its bootstrap stack with:"
-note "  ALCHEMY_PROFILE=admin CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-<account id>} GITHUB_REPO=$PROJECT_REPO \\"
-note "  CONTROL_PLANE_DB=production-project-ops-db <its bootstrap command>"
-note "(e.g. 'pnpm bootstrap:github'; see docs/managed-projects.md)."
-pause "Enter when it finishes."
+# The platform's own URL is https://<worker>.<subdomain>.workers.dev.
+WORKERS_SUBDOMAIN=$(_existing DASHBOARD_URL | sed -nE 's#^https://[^.]+\.([^.]+)\.workers\.dev.*#\1#p' || true)
+pause "Enter once the admin profile and wrangler are set up (or already were)."
+_clear
+printf "\n%s%s▸ Stage 2/%s · Run the bootstrap, in the project's folder%s\n" \
+  "$BOLD" "$BLUE" "$TOTAL_STAGES" "$RESET"
+say ""
+say "${BOLD}1. Create a file named .env in the project's folder with these lines:${RESET}"
+note "  (it's gitignored; none of these values are secrets)"
+say ""
+say "   CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-<account id>}"
+say "   GITHUB_REPO=$PROJECT_REPO"
+say "   CONTROL_PLANE_DB=production-project-ops-db"
+say "   CLOUDFLARE_WORKERS_SUBDOMAIN=${WORKERS_SUBDOMAIN:-<dashboard: Workers & Pages -> Subdomain>}"
+say "   CF_ACCESS_TEAM_DOMAIN=$(_existing CF_ACCESS_TEAM_DOMAIN || echo '<team>')"
+say "   CF_GOOGLE_IDP_ID=$(_existing CF_GOOGLE_IDP_ID || echo '<google idp id>')"
+say "   CF_ACCESS_ALLOW_EMAIL=$(_existing CF_ACCESS_ALLOW_EMAIL || echo '<who may log in>')"
+say ""
+note "  The last three lock the project's previews and staging behind this"
+note "  platform's Google login (same Zero Trust org). A Svelteflare project needs them."
+say ""
+say "${BOLD}2. Check wrangler is logged in to this account:${RESET}"
+say "   pnpm exec wrangler whoami"
+say ""
+say "${BOLD}3. Run the bootstrap, and approve its plan:${RESET}"
+say "   ALCHEMY_PROFILE=admin pnpm bootstrap:github"
+note "  It ends with: Verified CI token refreshed in Cloudflare, GitHub, and Alchemy state."
+say ""
+# Don't move on until the bootstrap's secrets are on the repo: everything
+# after this, and every deploy, depends on them.
+while true; do
+  pause "Enter when the bootstrap has finished."
+  if ! command -v gh >/dev/null 2>&1 || ! gh auth status >/dev/null 2>&1; then
+    warn "gh isn't logged in, so I can't check the repo's secrets. Carrying on."
+    break
+  fi
+  existing_secrets=$(gh secret list --repo "$PROJECT_REPO" 2>/dev/null | cut -f1)
+  missing=()
+  for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PROJECT_OPS_TOKEN; do
+    grep -qx "$name" <<<"$existing_secrets" || missing+=("$name")
+  done
+  if (( ${#missing[@]} == 0 )); then
+    say "✓ the bootstrap's secrets are on $PROJECT_REPO"
+    break
+  fi
+  warn "$PROJECT_REPO is still missing: ${missing[*]}"
+  warn "The bootstrap hasn't run, or failed. Run step 3 above (see its output)."
+done
 
 # ── Stage 3: Access credentials + callback URL ────────────────────────────
 stage "Set the project's Access secrets and callback URL"
@@ -263,11 +306,18 @@ if [[ -z "$CF_ACCESS_CLIENT_ID" || -z "$CF_ACCESS_CLIENT_SECRET" || -z "$PROJECT
 fi
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
   # Values go in on stdin, never as arguments, so they don't show up in `ps`.
-  printf '%s' "$CF_ACCESS_CLIENT_ID" | gh secret set CF_ACCESS_CLIENT_ID --repo "$PROJECT_REPO" \
-    && WRITTEN_SECRET+=("CF_ACCESS_CLIENT_ID") && say "✓ CF_ACCESS_CLIENT_ID"
-  printf '%s' "$CF_ACCESS_CLIENT_SECRET" | gh secret set CF_ACCESS_CLIENT_SECRET --repo "$PROJECT_REPO" \
-    && WRITTEN_SECRET+=("CF_ACCESS_CLIENT_SECRET") && say "✓ CF_ACCESS_CLIENT_SECRET"
-  gh variable set PROJECT_OPS_URL --repo "$PROJECT_REPO" --body "$PROJECT_OPS_URL" && say "✓ PROJECT_OPS_URL (variable)"
+  for name in CF_ACCESS_CLIENT_ID CF_ACCESS_CLIENT_SECRET; do
+    if printf '%s' "${!name}" | gh secret set "$name" --repo "$PROJECT_REPO" >/dev/null; then
+      WRITTEN_SECRET+=("$name") && say "✓ $name"
+    else
+      SKIPPED+=("$PROJECT_REPO secret $name (gh secret set $name --repo $PROJECT_REPO)")
+    fi
+  done
+  if gh variable set PROJECT_OPS_URL --repo "$PROJECT_REPO" --body "$PROJECT_OPS_URL" >/dev/null; then
+    say "✓ PROJECT_OPS_URL (variable)"
+  else
+    SKIPPED+=("$PROJECT_REPO variable PROJECT_OPS_URL")
+  fi
 else
   warn "gh not authenticated. Run these yourself (each prompts for the value):"
   note "  gh secret set CF_ACCESS_CLIENT_ID --repo $PROJECT_REPO"
@@ -276,7 +326,8 @@ else
   SKIPPED+=("$PROJECT_REPO repo secrets/variable (see commands above)")
 fi
 say ""
-say "Check it end to end: open a PR on the project and follow it through."
+say "Check it end to end once the project's own app secrets are set (its README"
+say "lists them): open a PR into its 'staging' branch and follow it through."
 step "The project's PR workflow provisions pr-{n} and records the Deployment."
 open_url "https://github.com/${PROJECT_REPO}/actions"
 step "Open the dashboard and confirm the PR environment shows, with status and commit."
