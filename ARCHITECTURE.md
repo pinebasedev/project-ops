@@ -6,8 +6,8 @@ This document ties together the domain glossary ([`CONTEXT.md`](./CONTEXT.md)) a
 
 ## Components
 
-- **Managed Projects** — applications onboarded into the platform, living in their own repositories (e.g. the Svelteflare boilerplate). Each owns its own GitHub Actions workflows.
-- **Dashboard + control-plane API** — one SvelteKit app (Svelte UI, Hono API), running as a single Cloudflare Worker. The Hono app — system of record for Projects, Environments, Deployments, and CI results, D1-backed, see [ADR-0003](./docs/adr/0003-d1-only-no-durable-objects.md) — is mounted same-origin under `/v1/*`; the dashboard is the human-facing UI over it. `apps/control-plane` holds the API code as a workspace-internal library (not its own deploy target); `apps/dashboard` is what actually deploys. See [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md).
+- **Managed Projects** — applications onboarded into the platform, living in their own repositories (e.g. demo-project). Each owns its own GitHub Actions workflows.
+- **Dashboard + control-plane API** — a single SvelteKit app (Svelte UI in `apps/web`, Hono API in `apps/api`), deployed as one Cloudflare Worker. The Hono app — system of record for Projects, Environments, Deployments, and CI results, D1-backed, see [ADR-0003](./docs/adr/0003-d1-only-no-durable-objects.md) — is mounted same-origin under `/v1/*`; the dashboard is the human-facing UI over it. `apps/api` holds the API code as a workspace-internal library (not its own deploy target); `apps/web` is what actually deploys. See [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md).
 - **Alchemy** — provisions the actual Cloudflare infrastructure (Workers, D1, etc.) per Project/Environment, executed from each managed Project's own GitHub Actions, not from the control plane. See [ADR-0001](./docs/adr/0001-alchemy-provisioning-driven-by-github-actions.md).
 - **Cloudflare Access** — gates the whole dashboard + control-plane Worker. See [ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md) and [ADR-0011](./docs/adr/0011-one-access-application-identity-scoped-reads.md).
 
@@ -42,19 +42,16 @@ Terms: [`Project`](./CONTEXT.md), [`Environment`](./CONTEXT.md), [`Stage`](./CON
 
 The control plane holds no Cloudflare API credential of its own at runtime (see [ADR-0012](./docs/adr/0012-no-platform-cloudflare-api-credential.md)) — its only bindings are `DB` and the plain Access strings (`CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`). Alchemy's own deploy-time Cloudflare authentication is a local OAuth session (`alchemy profile`, cached to `~/.alchemy` on the deploying machine), never a Worker binding. How a managed project gets its own credentials (Cloudflare CI token, bearer token, Access service token) is covered by [ADR-0010](./docs/adr/0010-managed-project-credentials-from-a-bootstrap-stack.md).
 
-## Control-plane API & dashboard conventions
-
-Adopted directly from Svelteflare's Hono/SvelteKit patterns — the reference for dashboard design, project structure, and API patterns (not its tooling — see below):
+## API & dashboard conventions
 
 - **Data layer**: Drizzle ORM over D1, schema in a single `schema.ts`, migrations via `drizzle-kit`.
 - **App structure**: Hono app-factory pattern (`createApp(overrides)`), so the control-plane API is testable by dependency injection rather than global singletons.
 - **API conventions**: routes mounted under `/v1`, composed in `routes/index.ts`; `requestId` and `secureHeaders` middleware on every request; a centralized `onError` handler returning sanitized JSON (no leaking internals or stack traces in responses); a `notFound` handler. Folder separation: `routes/`, `middleware/`, `helpers/`, `db/`.
 - **Typed client**: the dashboard calls the control-plane API via Hono's `AppType` export (an RPC-style client, `hc<AppType>()`) for end-to-end type safety with zero codegen, over a same-origin `/v1/*` mounted in the dashboard's own Worker (see [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)). This couples the dashboard's build to the control-plane's types at compile time — accepted, since both live in the same pnpm workspace.
-- **Control-plane module**: page loaders never touch the RPC client directly. `lib/api/controlPlane.ts` is the dashboard's one interface onto the control plane — the five reads the views need — and absorbs the HTTP failure protocol (502 unreachable, 401 expired Access session, 404 missing) and the response-union narrowing. It takes its client as a parameter, so its tests run the real control-plane app in-process over an in-memory SQLite database (`control-plane/testing`) rather than mocking the transport.
-- **UI**: Tailwind + shadcn-svelte, built directly inside `apps/dashboard` — no separate shared `packages/ui`, since unlike Svelteflare this project has only one frontend to serve. Components installed via `pnpm dlx skills add huntabyte/shadcn-svelte` (plus the relevant Svelte skills), not hand-copied.
+- **Control-plane module**: page loaders never touch the RPC client directly. `lib/api/controlPlane.ts` is the dashboard's one interface onto the control plane — the five reads the views need — and absorbs the HTTP failure protocol (502 unreachable, 401 expired Access session, 404 missing) and the response-union narrowing. It takes its client as a parameter, so its tests run the real control-plane app in-process over an in-memory SQLite database (`api/testing`) rather than mocking the transport.
+- **UI**: Tailwind + shadcn-svelte, built directly inside `apps/web` — no separate shared UI package, since there is only one frontend. Components installed via `pnpm dlx skills add huntabyte/shadcn-svelte` (plus the relevant Svelte skills), not hand-copied.
 - **Local config**: a gitignored root `.env` (see `.env.example`) for deploy-time config (the Access team domain, Google IdP id, allow-listed email). `alchemy dev` needs none of it; `alchemy deploy` fails if the Access values are missing. There is no application secret in this file — see "Auth" above.
-
-**Not adopted** from Svelteflare: better-auth, cookie/session-based login, and the Stripe/billing domain — all superseded by Cloudflare Access ([ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md)), which issues and manages its own session rather than the app rolling its own.
+- **No app-managed login**: there are no users, passwords, or sessions in the app. Cloudflare Access ([ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md)) issues and manages the session.
 
 ## Local development
 
@@ -64,12 +61,12 @@ The Cloudflare Access resources are guarded out of `alchemy dev` (they have no l
 
 The dashboard's pages are a client-rendered SPA (`ssr` disabled); the `/v1/*` API routes are always server-rendered, same as any SvelteKit `+server.ts`. On deploy Alchemy swaps in its own Cloudflare adapter; the `@sveltejs/adapter-static` config stays for `svelte-check` and a standalone `vite build`.
 
-This is separate from the CI-time test suites (the `vitest` unit suite runs in plain Node against an in-memory libsql DB; the live Integration Test suite runs against deployed staging).
+Tests here are unit tests (`vitest`, in plain Node against an in-memory libsql DB). Live integration and end-to-end tests run in each managed project's own repository, against its deployed staging ([ADR-0006](./docs/adr/0006-integration-tests-run-once-on-staging.md)).
 
 ## Tooling & repository conventions
 
-- Monorepo: pnpm workspaces, `apps/*` + `packages/*` — layout inspired by Svelteflare's structure, not its tooling.
-- Lint/format/typecheck: the newer Vite+ toolchain, including Oxlint/Oxfmt — explicitly *not* Svelteflare's ESLint/Prettier/Turborepo stack.
+- Monorepo: pnpm workspaces, `apps/api` + `apps/web`.
+- Lint/format: Oxlint and Oxfmt. Typecheck: `tsc` and `svelte-check`.
 - Commits: Conventional Commits, validated by commitlint. Small, atomic, one logical change per commit. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for types, scopes, and examples.
 
 ## AI / agent interaction

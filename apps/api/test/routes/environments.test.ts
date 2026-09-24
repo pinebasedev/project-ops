@@ -4,7 +4,7 @@ import { deployments, environments, projects } from "../../src/db/schema";
 import { createTestDb } from "../helpers/db";
 
 async function seed(db: Awaited<ReturnType<typeof createTestDb>>) {
-  await db.insert(projects).values({ id: "proj-1", name: "svelteflare", tokenHash: "hash" });
+  await db.insert(projects).values({ id: "proj-1", name: "demo-project", tokenHash: "hash" });
   await db.insert(environments).values([
     { id: "env-1", projectId: "proj-1", kind: "ephemeral", stageName: "pr-1" },
     { id: "env-2", projectId: "proj-1", kind: "ephemeral", stageName: "pr-2" },

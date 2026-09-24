@@ -9,7 +9,7 @@ Each ADR records one decision that is hard to reverse, surprising without contex
 | [0003](./0003-d1-only-no-durable-objects.md) | Control-plane state lives in D1 only — no Durable Objects | Accepted | 2026-09-05 |
 | [0004](./0004-query-observability-directly.md) | Query Cloudflare Observability directly — no Tail Worker relay | Superseded by 0012 | 2026-09-05 |
 | [0005](./0005-cloudflare-access-in-front-of-dashboard-and-api.md) | Cloudflare Access protects both the dashboard and the API, provisioned as code | Accepted, amended by 0010 and 0011 | 2026-09-05 |
-| [0006](./0006-integration-tests-run-once-on-staging.md) | Integration tests run once, on staging after merge — not per PR | Accepted, suite not yet implemented | 2026-09-05 |
+| [0006](./0006-integration-tests-run-once-on-staging.md) | Integration tests run once, on staging after merge — not per PR | Accepted | 2026-09-05 |
 | [0007](./0007-no-github-api-access-link-out-instead.md) | Control plane never calls GitHub's API — link out instead of fetching | Accepted | 2026-09-05 |
 | [0008](./0008-no-ai-interface-this-version.md) | No dedicated AI/agent interface in this version | Accepted | 2026-09-05 |
 | [0009](./0009-platform-self-provisioning-stack.md) | The platform provisions itself with one Alchemy stack | Accepted, partly superseded by 0012 | 2026-09-06 |

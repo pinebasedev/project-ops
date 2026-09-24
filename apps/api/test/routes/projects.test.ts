@@ -5,14 +5,14 @@ import { createTestDb, seedProject } from "../helpers/db";
 describe("GET /v1/projects", () => {
   it("lists registered projects without exposing token hashes", async () => {
     const db = await createTestDb();
-    await seedProject(db, { name: "svelteflare" });
+    await seedProject(db, { name: "demo-project" });
     await seedProject(db, { name: "another" });
     const app = createApp({ db });
 
     const res = await app.request("/v1/projects");
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>[];
-    expect(body.map((p) => p.name).sort()).toEqual(["another", "svelteflare"]);
+    expect(body.map((p) => p.name).sort()).toEqual(["another", "demo-project"]);
     for (const project of body) {
       expect(project).not.toHaveProperty("tokenHash");
     }

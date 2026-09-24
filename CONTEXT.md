@@ -5,7 +5,7 @@ A lightweight, opinionated internal developer platform for applications running 
 ## Language
 
 **Project**:
-An application onboarded into the platform for lifecycle management (e.g., the Svelteflare boilerplate, which lives in its own repository). Owns one or more Environments.
+An application onboarded into the platform for lifecycle management (e.g., demo-project, which lives in its own repository). Owns one or more Environments.
 _Avoid_: App, service, repo
 
 **Environment**:

@@ -5,7 +5,7 @@ A small, opinionated internal developer platform for apps that run on Cloudflare
 Every pull request gets its own isolated environment. Merging into `staging` deploys staging, and merging `staging` into `main` deploys production. A central dashboard shows what is deployed where, at which commit, and whether staging's live tests passed. Each managed project provisions itself with [Alchemy](https://alchemy.run) from its own GitHub Actions and reports to a control plane, and the whole platform sits behind Cloudflare Access.
 
 > [!WARNING]
-> **Early access.** This platform is built and run by a single operator, and parts of it have not yet been verified end to end on a real deploy. See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for what's built and what isn't. Expect rough edges and breaking changes.
+> **Early access.** Built and run by a single maintainer. Expect rough edges and breaking changes. See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for what's built and what's next.
 
 ## How it works
 
@@ -61,8 +61,8 @@ It connects Alchemy to your account, collects the Zero Trust settings into a git
 
 | Path | What it is |
 |---|---|
-| `apps/control-plane` | The control-plane API (Hono + Drizzle on D1). A library mounted by the dashboard, not deployed on its own. |
-| `apps/dashboard` | The SvelteKit dashboard, and the one Worker that is deployed. Serves the API at `/v1/*`. |
+| `apps/api` | The control-plane API (Hono + Drizzle on D1). A library mounted by the web app, not deployed on its own. |
+| `apps/web` | The SvelteKit dashboard, and the one Worker that is deployed. Serves the API at `/v1/*`. |
 | `alchemy.run.ts`, `alchemy/` | The Alchemy stack that provisions the platform itself. |
 | `scripts/` | The deploy and onboarding wizards. |
 | `docs/` | ADRs, roadmap, and the managed-project contract. |
@@ -73,7 +73,7 @@ Small, clearly correct fixes are welcome. For anything larger, open an issue to 
 
 ## Credits
 
-Built on [Alchemy](https://alchemy.run), [Hono](https://hono.dev), [SvelteKit](https://svelte.dev/docs/kit), [Drizzle ORM](https://orm.drizzle.team), [shadcn-svelte](https://shadcn-svelte.com), and [Cloudflare Workers](https://workers.cloudflare.com). The dashboard and API conventions follow the Svelteflare boilerplate.
+Built on [Alchemy](https://alchemy.run), [Hono](https://hono.dev), [SvelteKit](https://svelte.dev/docs/kit), [Drizzle ORM](https://orm.drizzle.team), [shadcn-svelte](https://shadcn-svelte.com), and [Cloudflare Workers](https://workers.cloudflare.com).
 
 ## License
 

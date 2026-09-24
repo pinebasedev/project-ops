@@ -8,7 +8,7 @@ Date: 2026-09-22
 **Decision:** each managed project provisions its own credentials with one small Alchemy stack (e.g. `alchemy/github.ts` in the managed project), run once by hand from an operator's machine — never from CI — and re-runnable to rotate. It:
 
 - Mints a `Cloudflare.ApiToken.AccountApiToken` scoped to only the permission groups that project's own stack uses (for demo-project: Workers Scripts Write, D1 Write, Workers R2 Storage Write — never Access, Secrets Store, or Zero Trust org settings, which are platform concerns per [ADR-0005](./0005-cloudflare-access-in-front-of-dashboard-and-api.md)).
-- Generates the control-plane bearer token locally (the same 256-bit CSPRNG + SHA-256 scheme as the control plane's `mintToken()`), and writes only its hash straight into the platform's `control-plane-db` D1 database with `wrangler d1 execute --remote` — an `INSERT` on first registration, an `UPDATE` on rotation.
+- Generates the control-plane bearer token locally (the same 256-bit CSPRNG + SHA-256 scheme as the control plane's `mintToken()`), and writes only its hash straight into the platform's D1 database (`production-project-ops-db`) with `wrangler d1 execute --remote` — an `INSERT` on first registration, an `UPDATE` on rotation.
 - Pushes every value into the project's repo secrets (`CLOUDFLARE_API_TOKEN`, `IDP_PROJECT_TOKEN`, and — still to do — `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`) with `GitHub.Secret`. No value is ever printed or typed into a prompt.
 
 ## Considered Options
@@ -18,6 +18,6 @@ A control-plane route for registration (`POST /v1/projects` taking a `tokenHash`
 ## Consequences
 
 - The bootstrap script's insert-vs-update logic has no server-side guardrail.
-- It needs `control-plane-db`'s name as a known constant, and `wrangler` authenticated separately from Alchemy's own Cloudflare profile (the two credential caches aren't shared).
+- It needs the platform database's name as a known constant, and `wrangler` authenticated separately from Alchemy's own Cloudflare profile (the two credential caches aren't shared).
 - Minting a Cloudflare token needs a second, API-token-based Alchemy profile: Cloudflare's token-creation endpoint refuses OAuth sessions.
 - Cloudflare permission groups are still account-wide, not scoped to one D1 database or R2 bucket. What changes is that credentials are minted narrowly, in code, and reproducibly.

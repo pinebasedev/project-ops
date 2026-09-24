@@ -15,7 +15,7 @@ cached to `~/.alchemy` on the deploying machine only
 | File             | Resource                                                                            |
 | ---------------- | ----------------------------------------------------------------------------------- |
 | `config.ts`      | `stringOr` — a config value with a dev fallback                                     |
-| `Db.ts`          | `control-plane-db` — D1, migrations applied from `apps/control-plane/migrations`    |
+| `Db.ts`          | `production-project-ops-db` — D1, migrations applied from `apps/api/migrations`     |
 | `Access.ts`      | the Access policies (`allow-team`, `allow-ci`) and the GitHub Actions service token |
 | `alchemy.run.ts` | the stack: D1 + the dashboard/control-plane Worker, plus the Access application     |
 

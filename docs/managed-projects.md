@@ -2,7 +2,7 @@
 
 A managed Project is an application in its own GitHub repository. It provisions its own infrastructure with Alchemy from its own GitHub Actions ([ADR-0001](./adr/0001-alchemy-provisioning-driven-by-github-actions.md)) and reports each Deployment to the control plane. The platform never deploys anything itself; it records what the project's CI tells it.
 
-`scripts/onboard-project.sh` walks through the setup below. `demo-project` (a copy of the Svelteflare boilerplate) was the first managed project and is the reference implementation.
+`scripts/onboard-project.sh` walks through the setup below. `demo-project` was the first managed project and is the reference implementation.
 
 ## What the project's repository needs
 

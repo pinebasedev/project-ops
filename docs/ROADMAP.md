@@ -4,14 +4,14 @@ Where the platform stands and what comes next. The design is in [`ARCHITECTURE.m
 
 ## Built
 
-**Control plane** (`apps/control-plane`)
+**Control-plane API** (`apps/api`)
 - D1 schema for Projects, Environments (`ephemeral` / `staging` / `production`), and Deployments, with Drizzle migrations.
 - Per-project bearer tokens, stored hashed, for managed projects' CI to write their own Deployments.
 - Callback routes: register a Deployment, complete it (`done` / `failed`, preview URL), and record live test results ([`docs/managed-projects.md`](./managed-projects.md)).
 - Read routes for the dashboard, restricted to identity logins ([ADR-0011](./adr/0011-one-access-application-identity-scoped-reads.md)).
 - Server-side Cloudflare Access JWT verification.
 
-**Dashboard** (`apps/dashboard`)
+**Dashboard** (`apps/web`)
 - A project's active PR environments, with status, commit, and preview link.
 - Staging view: current Deployment and live test results.
 - Production view: the commit currently running in production.
@@ -20,14 +20,12 @@ Where the platform stands and what comes next. The design is in [`ARCHITECTURE.m
 **Provisioning**
 - One Alchemy stack deploys the platform itself, behind Cloudflare Access ([ADR-0009](./adr/0009-platform-self-provisioning-stack.md)).
 - A deploy wizard (`scripts/deploy-wizard.sh`) and an onboarding wizard for managed projects (`scripts/onboard-project.sh`).
-- The reference managed project (demo-project) deploys PR environments and staging from its own GitHub Actions and reports them to the control plane.
+- Verified end to end on a real deploy: the reference managed project (demo-project) deploys PR environments, staging, and production from its own GitHub Actions, and the dashboard reflects each one.
 
 ## Next
 
-- **End-to-end verification** of a deployed platform: a real PR on a managed project, through staging and promotion to production, reflected in the dashboard at every step.
-- **Production deploys** of a managed project, verified for real.
 - **Credential bootstrap**, finished: the bootstrap stack also mints the bearer token and pushes the Access service-token credentials ([ADR-0010](./adr/0010-managed-project-credentials-from-a-bootstrap-stack.md)).
-- **Tests against a managed project:** a live suite against staging plus an in-process integration layer, landed together ([ADR-0006](./adr/0006-integration-tests-run-once-on-staging.md)).
+- **Integration and end-to-end tests:** they live in each managed project's repository for now, reporting results through the callback ([ADR-0006](./adr/0006-integration-tests-run-once-on-staging.md)). Shared test tooling may move into this repo later.
 - **Destroyed environments:** record when a PR environment is torn down, so closed PRs drop out of the dashboard.
 
 ## Not planned

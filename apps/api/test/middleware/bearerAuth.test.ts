@@ -6,7 +6,7 @@ import { createTestDb, seedProject } from "../helpers/db";
 
 async function setup() {
   const db = await createTestDb();
-  const { id, token } = await seedProject(db, { id: "proj-1", name: "svelteflare" });
+  const { id, token } = await seedProject(db, { id: "proj-1", name: "demo-project" });
 
   const app = new Hono<Env>();
   app.use("*", async (c, next) => {
