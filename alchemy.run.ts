@@ -43,7 +43,11 @@ export default Alchemy.Stack(
   Effect.gen(function* () {
     const dev = yield* ALCHEMY_DEV;
     const database = yield* Database;
-    const accessTeamDomain = yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team");
+    // Required on deploy: a fallback would bind a team whose keys can't verify
+    // any real Access JWT, so every request would fail with no deploy error.
+    const accessTeamDomain = dev
+      ? yield* stringOr("CF_ACCESS_TEAM_DOMAIN", "dev-team")
+      : yield* Config.String("CF_ACCESS_TEAM_DOMAIN");
 
     // Zero Trust resources have no local simulator, so they're deploy-only.
     // The explicit `Access.Application` (rather than the inline `access:

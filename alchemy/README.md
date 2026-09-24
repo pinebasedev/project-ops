@@ -47,8 +47,7 @@ them), so local dev needs no Zero Trust org and the control-plane runs ungated.
 `pnpm check:alchemy` typechecks the stack. A real deploy needs a Zero Trust org
 with a Google identity provider, and the Access values in the root `.env`
 (`CF_ACCESS_TEAM_DOMAIN`, `CF_GOOGLE_IDP_ID`, `CF_ACCESS_ALLOW_EMAIL`, see
-`../.env.example`). `alchemy deploy` fails if the IdP id or allow-listed email is
-missing. [`../scripts/deploy-wizard.sh`](../scripts/deploy-wizard.sh) walks you
+`../.env.example`). `alchemy deploy` fails if any of the three is missing. [`../scripts/deploy-wizard.sh`](../scripts/deploy-wizard.sh) walks you
 through all of it.
 
 The stack outputs `dashboardUrl`, the Access application's `accessAud`, and the
