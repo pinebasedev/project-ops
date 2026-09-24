@@ -1,24 +1,21 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 
 /**
- * The control-plane's D1 database (`DB` binding).
+ * The control plane's D1 database (`DB` binding).
  *
  * `migrations` points at the existing drizzle-kit output. Alchemy sorts the
  * `.sql` files by numeric prefix and applies pending ones on every deploy, adopting a
  * database previously migrated with `wrangler d1 migrations apply` via a
  * one-way conversion on first run.
  *
- * `name` is pinned explicitly: the first argument ("control-plane-db") is
- * only Alchemy's own internal logical resource id, not the actual Cloudflare
- * database name — left unset, Alchemy auto-generates a machine/stage-specific
- * physical name (e.g. `project-ops-control-plane-db-live-<user>-<random>`)
- * instead. demo-project's bootstrap stack (`alchemy/github.ts`) shells out to
- * `wrangler d1 execute control-plane-db --remote` directly — it has to assume
- * a stable, predictable name since it isn't itself an Alchemy resource that
- * could resolve the real one, so this pins Cloudflare's own database name to
- * match.
+ * `name` is pinned explicitly: the first argument ("db") is only Alchemy's
+ * internal logical resource id, and left unset Alchemy would generate a
+ * machine/stage-specific physical name. A managed project's credential
+ * bootstrap stack (ADR-0010) writes to this database with a plain
+ * `wrangler d1 execute <name> --remote`, which can't resolve an Alchemy
+ * resource, so it needs a stable, predictable name.
  */
-export const Database = Cloudflare.D1.Database("control-plane-db", {
-  name: "production-control-plane-db",
+export const Database = Cloudflare.D1.Database("db", {
+  name: "production-project-ops-db",
   migrations: "./apps/api/migrations",
 });

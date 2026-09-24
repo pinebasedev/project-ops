@@ -220,7 +220,7 @@ write_env PROJECT_REPO "$PROJECT_REPO"
 # There is no registration route on the control plane (deliberately: it has
 # zero token-issuance surface, see ADR-0010). The project's own bootstrap
 # stack mints its Cloudflare CI token and its control-plane bearer token,
-# writes the bearer token's hash straight into control-plane-db, and pushes
+# writes the bearer token's hash straight into the platform's D1, and pushes
 # CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / IDP_PROJECT_TOKEN into the
 # project's GitHub secrets itself.
 stage "Run the project's credential bootstrap stack"
@@ -244,7 +244,8 @@ note "  (choose 'Stored', not OAuth — paste the token from the step above)"
 say ""
 CLOUDFLARE_ACCOUNT_ID=$(_existing CLOUDFLARE_ACCOUNT_ID || true)
 say "In the project's checkout, run its bootstrap stack with:"
-note "  ALCHEMY_PROFILE=admin CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-<account id>} GITHUB_REPO=$PROJECT_REPO"
+note "  ALCHEMY_PROFILE=admin CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-<account id>} GITHUB_REPO=$PROJECT_REPO \\"
+note "  CONTROL_PLANE_DB=production-project-ops-db"
 note "(demo-project's is 'pnpm bootstrap:github')."
 pause "Enter when it finishes."
 
