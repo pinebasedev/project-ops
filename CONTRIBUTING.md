@@ -1,86 +1,47 @@
 # Contributing
 
-## Commit strategy
+This is a single-maintainer project, and reviewing changes takes much more effort than writing them. So:
 
-This repo uses [Conventional Commits](https://www.conventionalcommits.org/), enforced by [commitlint](https://commitlint.js.org/).
+- **Small, clearly correct fixes are welcome**: a bug fix whose full effect is obvious from reading the patch.
+- **For anything bigger**, such as a feature, a refactor, or a design change, [open a discussion](../../discussions) first. A large PR without one will likely be closed with a pointer here.
+- **For bugs**, [open an issue](../../issues/new/choose) first if you aren't sure of the fix.
+- **For security issues**, see [`SECURITY.md`](./SECURITY.md). Don't file them publicly.
+
+Design context lives in [`ARCHITECTURE.md`](./ARCHITECTURE.md), [`CONTEXT.md`](./CONTEXT.md) (use its terms), and [`docs/adr/`](./docs/adr/). A change that goes against an accepted ADR needs a new ADR, not just a PR.
+
+## Development
+
+See the README's quick start. Before opening a PR:
+
+```sh
+pnpm check && pnpm test && pnpm lint && pnpm format:check
+```
+
+The agent skills used while building this (Cloudflare, Hono, Svelte, shadcn-svelte) aren't committed. Restore them with `pnpm dlx skills experimental_install`, run from each directory that has a `skills-lock.json`.
+
+## What CI runs on your PR
+
+[`ci.yml`](.github/workflows/ci.yml) runs format check, lint, typecheck, tests, and `shellcheck` on every pull request, including PRs from forks. It uses no secrets, and nothing in this repository deploys from CI: the platform is deployed from an operator's machine (`scripts/deploy-wizard.sh`). Workflows from first-time contributors wait for maintainer approval before running.
+
+## Commits
+
+This repo uses [Conventional Commits](https://www.conventionalcommits.org/), enforced by commitlint ([`commitlint.config.js`](./commitlint.config.js)) through a Husky `commit-msg` hook.
 
 ```
 <type>(<scope>): <short imperative description>
 ```
 
-### Types
+**Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `build`, `perf`.
 
-- `feat` — new functionality
-- `fix` — bug fixes
-- `refactor` — internal restructuring without changing behavior
-- `test` — tests
-- `docs` — documentation
-- `chore` — maintenance/tooling
-- `ci` — CI/CD configuration
-- `build` — build-system changes
-- `perf` — performance improvements
-
-### Scopes
-
-`control-plane`, `api`, `dashboard`, `ci`, `alchemy`, `infra`, `db`, `observability`, `integration`, `tooling`, `docs`, `architecture`
-
-(`ai` is deliberately not in this list — see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md). Re-add it if that decision is revisited.)
-
-### Examples
+**Scopes** (required): `control-plane`, `api`, `dashboard`, `ci`, `alchemy`, `infra`, `db`, `observability`, `integration`, `tooling`, `docs`, `architecture`. There is deliberately no `ai` scope; see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md).
 
 ```
 feat(control-plane): add deployment registry
-feat(ci): provision PR preview environments
 fix(ci): prevent stale preview deployments
-test(integration): verify PR environment cleanup
-chore(tooling): configure Vite+ linting
 docs(architecture): document deployment lifecycle
 ```
 
-Avoid vague messages: `updates`, `fix stuff`, `changes`, `wip`, `misc fixes`.
-
-### commitlint config (reference — not wired up yet)
-
-Once the repo has a `package.json`/pnpm workspace, this is the intended `commitlint.config.js`, enforced via a Husky `commit-msg` hook running `commitlint --edit $1`:
-
-```js
-export default {
-  extends: ['@commitlint/config-conventional'],
-  rules: {
-    'type-enum': [
-      2,
-      'always',
-      ['feat', 'fix', 'refactor', 'test', 'docs', 'chore', 'ci', 'build', 'perf'],
-    ],
-    'scope-enum': [
-      2,
-      'always',
-      [
-        'control-plane',
-        'api',
-        'dashboard',
-        'ci',
-        'alchemy',
-        'infra',
-        'db',
-        'observability',
-        'integration',
-        'tooling',
-        'docs',
-        'architecture',
-      ],
-    ],
-    'scope-empty': [2, 'never'],
-  },
-};
-```
-
-`extends: ['@commitlint/config-conventional']` gives the Conventional Commits baseline (format, casing, `BREAKING CHANGE:` footer support); the overrides lock `type` and `scope` to exactly the lists above instead of accepting anything, and `scope-empty` makes a scope mandatory.
-
-### Rules
-
-- Commits are small, atomic, and logically coherent. Don't combine unrelated changes into one commit — split them.
-- Before every commit: inspect the diff, determine the single logical change it represents, split if necessary, run the relevant checks/tests, then write a message describing the *intent* of the change, not a list of which files changed.
-- Add a commit body when the change needs context a future reader wouldn't have — why it was made, and any real trade-off behind it.
+- Keep commits small and atomic: one logical change each, with unrelated changes split out.
+- Describe the *intent* of the change, not which files changed. Messages like `updates` or `fix stuff` will be rejected.
+- Add a body when a future reader would need context: why the change was made, and any real trade-off behind it.
 - Use a `BREAKING CHANGE:` footer only for a genuinely breaking interface or behavior change.
-- Don't commit just because a checklist item was completed. Commit when the repo has reached a coherent, working state representing one logical change.
