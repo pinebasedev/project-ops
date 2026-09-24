@@ -69,7 +69,7 @@ It connects Alchemy to your account, collects the Zero Trust settings into a git
 
 ## Contributing
 
-Small, clearly correct fixes are welcome. For anything larger, open a discussion first. See [`CONTRIBUTING.md`](./CONTRIBUTING.md). To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
+Small, clearly correct fixes are welcome. For anything larger, open an issue to discuss it first. See [`CONTRIBUTING.md`](./CONTRIBUTING.md). To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
 
 ## Credits
 

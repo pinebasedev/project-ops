@@ -1,8 +1,6 @@
-blank_issues_enabled: false
+# Blank issues are for feature ideas and design questions; discuss those before opening a PR.
+blank_issues_enabled: true
 contact_links:
-  - name: Feature idea or design question
-    url: https://github.com/pinebasedev/project-ops/discussions
-    about: Propose features and discuss design in Discussions, before opening a PR.
   - name: Security vulnerability
     url: https://github.com/pinebasedev/project-ops/security/advisories/new
     about: Report privately. See SECURITY.md.

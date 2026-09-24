@@ -3,8 +3,8 @@
 This is a single-maintainer project, and reviewing changes takes much more effort than writing them. So:
 
 - **Small, clearly correct fixes are welcome**: a bug fix whose full effect is obvious from reading the patch.
-- **For anything bigger**, such as a feature, a refactor, or a design change, [open a discussion](../../discussions) first. A large PR without one will likely be closed with a pointer here.
-- **For bugs**, [open an issue](../../issues/new/choose) first if you aren't sure of the fix.
+- **For anything bigger**, such as a feature, a refactor, or a design change, [open an issue](../../issues/new/choose) to discuss it first. A large PR without one will likely be closed with a pointer here.
+- **For bugs**, open an issue first if you aren't sure of the fix.
 - **For security issues**, see [`SECURITY.md`](./SECURITY.md). Don't file them publicly.
 
 Design context lives in [`ARCHITECTURE.md`](./ARCHITECTURE.md), [`CONTEXT.md`](./CONTEXT.md) (use its terms), and [`docs/adr/`](./docs/adr/). A change that goes against an accepted ADR needs a new ADR, not just a PR.

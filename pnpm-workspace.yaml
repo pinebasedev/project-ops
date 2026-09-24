@@ -7,7 +7,7 @@ allowBuilds:
   msgpackr-extract: false
   workerd: true
 # Refuse to install a version published less than a day ago (minutes), so a
-# compromised release has time to be caught. Keep Dependabot's cooldown above it.
+# compromised release has time to be caught.
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - hono@4.13.7

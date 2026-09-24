@@ -1,6 +1,6 @@
 > [!IMPORTANT]
 > Small, clearly correct fixes only. For features, refactors, or design changes,
-> [open a discussion](https://github.com/pinebasedev/project-ops/discussions) first. See [CONTRIBUTING.md](https://github.com/pinebasedev/project-ops/blob/main/CONTRIBUTING.md).
+> [open an issue](https://github.com/pinebasedev/project-ops/issues/new/choose) first. See [CONTRIBUTING.md](https://github.com/pinebasedev/project-ops/blob/main/CONTRIBUTING.md).
 
 ## What does this change?
 
