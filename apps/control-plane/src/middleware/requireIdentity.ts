@@ -3,8 +3,8 @@ import type { Env } from "../env";
 import { unauthorizedJson } from "../helpers/errors";
 
 /**
- * Restricts a route to identity-authenticated callers — the dashboard's
- * founder-only Google login (ADR-0005) — rejecting a service-token-
+ * Restricts a route to identity-authenticated callers — the operator's
+ * Google login to the dashboard (ADR-0011) — rejecting a service-token-
  * authenticated caller (any managed project's CI) even though both pass the
  * same Access JWT gate (`middleware/accessJwt.ts`).
  *
