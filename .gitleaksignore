@@ -1,0 +1,3 @@
+# False positive: an example "sk-live-abc123..." key in the (formerly vendored)
+# Cloudflare workers-best-practices skill, illustrating what not to commit.
+6a8b987a41d1bbe9218e02e76746edd63bbca3d4:.claude/skills/workers-best-practices/references/rules.md:generic-api-key:82
