@@ -2,7 +2,7 @@ node_modules/
 dist/
 .alchemy/
 .wrangler/
-# Local config + captured values from scripts/phase-6-deploy.sh; read by Alchemy.
+# Local config + captured values from scripts/deploy-wizard.sh and scripts/onboard-project.sh; read by Alchemy.
 .env
 .env.*
 !.env.example

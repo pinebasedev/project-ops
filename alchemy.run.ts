@@ -10,7 +10,7 @@ import { stringOr } from "./alchemy/config.ts";
 import { Database } from "./alchemy/Db.ts";
 
 /**
- * The platform provisioning its own infrastructure (Phase 6, P6-01/02): one
+ * The platform provisioning its own infrastructure: one
  * SvelteKit Worker (the dashboard UI plus the control-plane API, mounted
  * same-origin at `/v1/*` — see docs/adr/0009), its D1
  * database, and — on deploy only — the Cloudflare Access perimeter. This is
@@ -31,8 +31,8 @@ import { Database } from "./alchemy/Db.ts";
  * minted by hand in the Cloudflare dashboard.
  *
  * State: local filesystem for `alchemy dev` / manual runs; the Cloudflare-backed
- * remote store in CI. The real `alchemy deploy`, the Zero Trust org + Google IdP,
- * and the end-to-end check (P6-06) are driven by scripts/phase-6-deploy.sh.
+ * remote store in CI. The real `alchemy deploy` and the Zero Trust org + Google
+ * IdP setup are driven by scripts/deploy-wizard.sh.
  */
 export default Alchemy.Stack(
   "project-ops",
@@ -48,7 +48,7 @@ export default Alchemy.Stack(
     // Zero Trust resources have no local simulator, so they're deploy-only.
     // The explicit `Access.Application` (rather than the inline `access:
     // { policies }` form) is what lets its AUD tag flow back into the Worker
-    // for server-side JWT verification (P6-03).
+    // for server-side JWT verification.
     //
     // Both `allowCi` (the shared GitHub Actions service token) and `allowTeam`
     // (the operator's Google login) sit on this one Application, gating the
