@@ -24,16 +24,16 @@ No workflow should ever be able to destroy `staging` or `prod`.
 |---|---|---|
 | `CLOUDFLARE_API_TOKEN` | secret | the bootstrap stack |
 | `CLOUDFLARE_ACCOUNT_ID` | secret | the bootstrap stack |
-| `IDP_PROJECT_TOKEN` | secret | the bootstrap stack (its hash is written to the platform's D1) |
+| `PROJECT_OPS_TOKEN` | secret | the bootstrap stack (its hash is written to the platform's D1) |
 | `CF_ACCESS_CLIENT_ID` | secret | `scripts/onboard-project.sh` |
 | `CF_ACCESS_CLIENT_SECRET` | secret | `scripts/onboard-project.sh` |
-| `IDP_API_URL` | variable | `scripts/onboard-project.sh` (the platform's URL) |
+| `PROJECT_OPS_URL` | variable | `scripts/onboard-project.sh` (the platform's URL) |
 
 Keep anything identifying in secrets rather than variables if the repository is public: GitHub prints variables unmasked in Actions logs.
 
 ## The callback contract
 
-Every call goes to `$IDP_API_URL` with three headers: `Authorization: Bearer $IDP_PROJECT_TOKEN`, `CF-Access-Client-Id`, and `CF-Access-Client-Secret`.
+Every call goes to `$PROJECT_OPS_URL` with three headers: `Authorization: Bearer $PROJECT_OPS_TOKEN`, `CF-Access-Client-Id`, and `CF-Access-Client-Secret`.
 
 1. **Before deploying**, register the Deployment:
 

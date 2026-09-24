@@ -221,7 +221,7 @@ write_env PROJECT_REPO "$PROJECT_REPO"
 # zero token-issuance surface, see ADR-0010). The project's own bootstrap
 # stack mints its Cloudflare CI token and its control-plane bearer token,
 # writes the bearer token's hash straight into the platform's D1, and pushes
-# CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / IDP_PROJECT_TOKEN into the
+# CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / PROJECT_OPS_TOKEN into the
 # project's GitHub secrets itself.
 stage "Run the project's credential bootstrap stack"
 say "The project mints its own narrowly scoped Cloudflare token and its"
@@ -252,11 +252,11 @@ pause "Enter when it finishes."
 # ── Stage 3: Access credentials + callback URL ────────────────────────────
 stage "Set the project's Access secrets and callback URL"
 say "The project's CI sends the Access service token on every callback to the"
-say "control plane, at IDP_API_URL (the platform's dashboard URL)."
+say "control plane, at PROJECT_OPS_URL (the platform's dashboard URL)."
 CF_ACCESS_CLIENT_ID=$(_existing CF_ACCESS_CLIENT_ID || true)
 CF_ACCESS_CLIENT_SECRET=$(_existing CF_ACCESS_CLIENT_SECRET || true)
-IDP_API_URL=$(_existing DASHBOARD_URL || true)
-if [[ -z "$CF_ACCESS_CLIENT_ID" || -z "$CF_ACCESS_CLIENT_SECRET" || -z "$IDP_API_URL" ]]; then
+PROJECT_OPS_URL=$(_existing DASHBOARD_URL || true)
+if [[ -z "$CF_ACCESS_CLIENT_ID" || -z "$CF_ACCESS_CLIENT_SECRET" || -z "$PROJECT_OPS_URL" ]]; then
   warn "Missing CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET or DASHBOARD_URL in $ENV_FILE."
   warn "Run scripts/deploy-wizard.sh first."
   exit 1
@@ -267,12 +267,12 @@ if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
     && WRITTEN_SECRET+=("CF_ACCESS_CLIENT_ID") && say "✓ CF_ACCESS_CLIENT_ID"
   printf '%s' "$CF_ACCESS_CLIENT_SECRET" | gh secret set CF_ACCESS_CLIENT_SECRET --repo "$PROJECT_REPO" \
     && WRITTEN_SECRET+=("CF_ACCESS_CLIENT_SECRET") && say "✓ CF_ACCESS_CLIENT_SECRET"
-  gh variable set IDP_API_URL --repo "$PROJECT_REPO" --body "$IDP_API_URL" && say "✓ IDP_API_URL (variable)"
+  gh variable set PROJECT_OPS_URL --repo "$PROJECT_REPO" --body "$PROJECT_OPS_URL" && say "✓ PROJECT_OPS_URL (variable)"
 else
   warn "gh not authenticated. Run these yourself (each prompts for the value):"
   note "  gh secret set CF_ACCESS_CLIENT_ID --repo $PROJECT_REPO"
   note "  gh secret set CF_ACCESS_CLIENT_SECRET --repo $PROJECT_REPO"
-  note "  gh variable set IDP_API_URL --repo $PROJECT_REPO --body $IDP_API_URL"
+  note "  gh variable set PROJECT_OPS_URL --repo $PROJECT_REPO --body $PROJECT_OPS_URL"
   SKIPPED+=("$PROJECT_REPO repo secrets/variable (see commands above)")
 fi
 say ""
@@ -280,6 +280,6 @@ say "Check it end to end: open a PR on the project and follow it through."
 step "The project's PR workflow provisions pr-{n} and records the Deployment."
 open_url "https://github.com/${PROJECT_REPO}/actions"
 step "Open the dashboard and confirm the PR environment shows, with status and commit."
-open_url "$IDP_API_URL"
+open_url "$PROJECT_OPS_URL"
 
 finish

@@ -9,7 +9,7 @@ Date: 2026-09-22
 
 - Mints a `Cloudflare.ApiToken.AccountApiToken` scoped to only the permission groups that project's own stack uses (for demo-project: Workers Scripts Write, D1 Write, Workers R2 Storage Write — never Access, Secrets Store, or Zero Trust org settings, which are platform concerns per [ADR-0005](./0005-cloudflare-access-in-front-of-dashboard-and-api.md)).
 - Generates the control-plane bearer token locally (the same 256-bit CSPRNG + SHA-256 scheme as the control plane's `mintToken()`), and writes only its hash straight into the platform's D1 database (`production-project-ops-db`) with `wrangler d1 execute --remote` — an `INSERT` on first registration, an `UPDATE` on rotation.
-- Pushes every value into the project's repo secrets (`CLOUDFLARE_API_TOKEN`, `IDP_PROJECT_TOKEN`, and — still to do — `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`) with `GitHub.Secret`. No value is ever printed or typed into a prompt.
+- Pushes every value into the project's repo secrets (`CLOUDFLARE_API_TOKEN`, `PROJECT_OPS_TOKEN`, and — still to do — `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`) with `GitHub.Secret`. No value is ever printed or typed into a prompt.
 
 ## Considered Options
 
