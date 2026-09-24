@@ -1,6 +1,7 @@
 # Promotion to production is a Git merge, not a control-plane action
 
 Status: accepted
+Date: 2026-09-05
 
 Staging deploys automatically whenever a feature PR merges into the `staging` branch; production deploys automatically whenever `staging` merges into `main`. The control plane never initiates or gates a promotion — it only observes the resulting GitHub Actions run and records the Deployment.
 

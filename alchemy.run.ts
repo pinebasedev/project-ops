@@ -12,7 +12,7 @@ import { Database } from "./alchemy/Db.ts";
 /**
  * The platform provisioning its own infrastructure (Phase 6, P6-01/02): one
  * SvelteKit Worker (the dashboard UI plus the control-plane API, mounted
- * same-origin at `/v1/*` — see docs/adr/0009's merge update), its D1
+ * same-origin at `/v1/*` — see docs/adr/0009), its D1
  * database, and — on deploy only — the Cloudflare Access perimeter. This is
  * where the platform is deployed for the first time, already behind Access,
  * never before (see docs/adr/0009 + docs/ROADMAP.md sequencing).
@@ -25,7 +25,7 @@ import { Database } from "./alchemy/Db.ts";
  * `CF_ACCESS_AUD` is absent.
  *
  * There is no Cloudflare API token anywhere in this stack or the deployed
- * Worker (ADR-0009 update): Alchemy authenticates as itself
+ * Worker (ADR-0012): Alchemy authenticates as itself
  * via its own Cloudflare profile's OAuth credentials, scoped and cached to
  * the deploying machine (`~/.alchemy`) — never a Worker binding, never
  * minted by hand in the Cloudflare dashboard.
@@ -55,8 +55,8 @@ export default Alchemy.Stack(
     // whole merged Worker — Access only answers "can this reach the Worker at
     // all," not "which kind of caller is this for which route." That split
     // happens server-side, off the verified JWT's `email` claim (present only
-    // for identity logins): see `middleware/requireIdentity.ts` and ADR-0005's
-    // 2026-09 merge update. (Consequence, accepted there: a CI service token
+    // for identity logins): see `middleware/requireIdentity.ts` and ADR-0011.
+    // (Consequence, accepted there: a CI service token
     // can now also load the dashboard's pages — its `/v1` reads still 401 via
     // `requireIdentityMiddleware`, same as before the merge.)
     const buildAccess = Effect.gen(function* () {
@@ -77,8 +77,7 @@ export default Alchemy.Stack(
 
     // One SvelteKit Worker: the dashboard UI (client-rendered, `ssr = false`)
     // plus the control-plane API, mounted same-origin at `/v1/*` via
-    // `apps/dashboard/src/routes/v1/[...rest]/+server.ts` (ADR-0009's merge
-    // update). `apps/control-plane` is now a workspace-internal library, not
+    // `apps/dashboard/src/routes/v1/[...rest]/+server.ts` (ADR-0009). `apps/control-plane` is now a workspace-internal library, not
     // its own deploy target.
     const app = yield* Cloudflare.Website.SvelteKit("dashboard", {
       name: "production-dashboard",

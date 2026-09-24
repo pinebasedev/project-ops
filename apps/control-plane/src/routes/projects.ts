@@ -11,7 +11,7 @@ const listEnvironmentsQuerySchema = z.object({ kind: z.enum(environmentKinds).op
 // No registration route here: a project's row and its bearer-token hash are
 // written directly into this D1 database by each managed project's own
 // bootstrap stack (`alchemy/github.ts`, run once by hand), not minted by
-// calling this API — see ADR-0001's "bearer-token provisioning" update. That
+// calling this API — see ADR-0010. That
 // keeps this API's token-issuance surface at zero: no route here can mint or
 // overwrite a project's credential, for any caller.
 //

@@ -1,6 +1,7 @@
 # Control-plane state lives in D1 only — no Durable Objects
 
 Status: accepted
+Date: 2026-09-05
 
 Alchemy's own remote state store already gives per-stage isolation and durability for *infrastructure* state. The control plane's *domain* data (Projects, Environments, Deployments, CIRuns) is written by a small, sequential set of steps from a single GitHub Actions run per deployment, with no requirement for real-time log streaming and only three deployment statuses (`in_progress`, `done`, `failed`). D1 alone handles this comfortably: relational querying for the target questions ("what's in prod," "what changed between two deployments," "which PR environments are active") and ordinary transactional writes for status updates, without the operational surface of a second storage primitive.
 

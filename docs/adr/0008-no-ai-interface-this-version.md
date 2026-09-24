@@ -1,6 +1,7 @@
 # No dedicated AI/agent interface in this version
 
 Status: accepted
+Date: 2026-09-05
 
 The original project goals named "a useful AI/agent interface" as one of the things this platform should demonstrate, and asked for a comparison between a dashboard chat (Workers AI) and an MCP server before assuming either was right. That comparison settled on a read-only MCP server for a developer using Claude Code locally — but it's been dropped, with no replacement, for this version.
 

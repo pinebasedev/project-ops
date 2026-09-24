@@ -1,6 +1,7 @@
 # Control plane never calls GitHub's API — link out instead of fetching
 
 Status: accepted
+Date: 2026-09-05
 
 The control plane holds no GitHub API credentials (no PAT, no GitHub App) and never calls GitHub's API for anything. Two places where this could easily have crept in were decided against explicitly:
 
@@ -13,4 +14,4 @@ Storing structured per-test results (parsed from the test runner's JSON reporter
 
 ## Consequences
 
-"Which integration tests failed for this PR?" is answered as "N of M failed, see the Actions run" rather than a per-test-name list directly queryable through the dashboard or MCP. GitHub's own UI is the source of truth for diffs and per-test detail; the control plane's job stays limited to correlating *that something happened* (status, counts, links) across commit → CI run → deployment → environment, not duplicating data GitHub already serves well.
+"Which integration tests failed for this PR?" is answered as "N of M failed, see the Actions run" rather than a per-test-name list directly queryable through the dashboard. GitHub's own UI is the source of truth for diffs and per-test detail; the control plane's job stays limited to correlating *that something happened* (status, counts, links) across commit → CI run → deployment → environment, not duplicating data GitHub already serves well.

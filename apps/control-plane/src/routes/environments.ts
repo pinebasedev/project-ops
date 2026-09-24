@@ -8,7 +8,7 @@ import { notFoundJson } from "../helpers/errors";
 import { requireIdentityMiddleware } from "../middleware/requireIdentity";
 
 // Dashboard-only, like the reads in routes/projects.ts — see that file's
-// comment and ADR-0005's update for why identity is required here.
+// comment and ADR-0011 for why identity is required here.
 export const environmentRoutes = new Hono<Env>().get(
   "/:id",
   requireIdentityMiddleware,

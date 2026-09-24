@@ -2,7 +2,7 @@ import type { AppType } from "control-plane/app";
 import { hc } from "hono/client";
 
 // The control plane is mounted same-origin at `/v1/*` (see `+server.ts` under
-// `routes/v1/[...rest]`, and ADR-0009's dashboard+control-plane merge update)
+// `routes/v1/[...rest]`, and ADR-0009)
 // — no base URL to configure, and no cross-origin credentials opt-in needed:
 // the browser sends the Access session cookie to same-origin requests as a
 // matter of course.

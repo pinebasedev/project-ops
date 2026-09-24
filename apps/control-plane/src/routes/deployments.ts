@@ -151,7 +151,7 @@ export const deploymentRoutes = new Hono<Env>()
     },
   )
   // Dashboard-only, like the reads in routes/projects.ts and
-  // routes/environments.ts — see ADR-0005's update.
+  // routes/environments.ts — see ADR-0011.
   .get("/:id", requireIdentityMiddleware, async (c) => {
     const deployment = await c.get("db").query.deployments.findFirst({
       where: { id: c.req.param("id") },
