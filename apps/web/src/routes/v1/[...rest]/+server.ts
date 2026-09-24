@@ -1,4 +1,4 @@
-import { createApp } from "control-plane/app";
+import { createApp } from "api/app";
 import type { RequestHandler } from "./$types";
 
 // Mounts the control-plane's Hono app in-Worker, at the same origin as the

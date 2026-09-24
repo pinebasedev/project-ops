@@ -1,4 +1,4 @@
-import type { AppType } from "control-plane/app";
+import type { AppType } from "api/app";
 import { hc } from "hono/client";
 
 // The control plane is mounted same-origin at `/v1/*` (see `+server.ts` under

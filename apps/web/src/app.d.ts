@@ -1,4 +1,4 @@
-import type { Bindings } from "control-plane/env";
+import type { Bindings } from "api/env";
 import type { IncomingRequestCfProperties } from "@cloudflare/workers-types";
 
 // See https://svelte.dev/docs/kit/types#app.d.ts

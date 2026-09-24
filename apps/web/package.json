@@ -1,5 +1,5 @@
 {
-  "name": "dashboard",
+  "name": "web",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "test": "pnpm run test:unit -- --run"
   },
   "dependencies": {
-    "control-plane": "workspace:*",
+    "api": "workspace:*",
     "hono": "^4.13.7"
   },
   "devDependencies": {

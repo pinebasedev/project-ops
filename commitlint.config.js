@@ -10,9 +10,8 @@ export default {
       2,
       'always',
       [
-        'control-plane',
         'api',
-        'dashboard',
+        'web',
         'ci',
         'alchemy',
         'infra',

@@ -77,11 +77,11 @@ export default Alchemy.Stack(
 
     // One SvelteKit Worker: the dashboard UI (client-rendered, `ssr = false`)
     // plus the control-plane API, mounted same-origin at `/v1/*` via
-    // `apps/dashboard/src/routes/v1/[...rest]/+server.ts` (ADR-0009). `apps/control-plane` is now a workspace-internal library, not
+    // `apps/web/src/routes/v1/[...rest]/+server.ts` (ADR-0009). `apps/api` is now a workspace-internal library, not
     // its own deploy target.
-    const app = yield* Cloudflare.Website.SvelteKit("dashboard", {
-      name: "production-dashboard",
-      rootDir: "./apps/dashboard",
+    const app = yield* Cloudflare.Website.SvelteKit("web", {
+      name: "production-project-ops",
+      rootDir: "./apps/web",
       compatibility: { flags: ["nodejs_compat"], date: "2026-09-05" },
       // Workers Logs: the control-plane routes' structured `console.log`/
       // `console.error` lines (helpers/logger.ts) plus one invocation log per

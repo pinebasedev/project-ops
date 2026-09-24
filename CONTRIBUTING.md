@@ -33,10 +33,10 @@ This repo uses [Conventional Commits](https://www.conventionalcommits.org/), enf
 
 **Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `build`, `perf`.
 
-**Scopes** (required): `control-plane`, `api`, `dashboard`, `ci`, `alchemy`, `infra`, `db`, `observability`, `integration`, `tooling`, `docs`, `architecture`. There is deliberately no `ai` scope; see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md).
+**Scopes** (required): `api`, `web`, `ci`, `alchemy`, `infra`, `db`, `observability`, `integration`, `tooling`, `docs`, `architecture`. There is deliberately no `ai` scope; see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md).
 
 ```
-feat(control-plane): add deployment registry
+feat(api): add deployment registry
 fix(ci): prevent stale preview deployments
 docs(architecture): document deployment lifecycle
 ```

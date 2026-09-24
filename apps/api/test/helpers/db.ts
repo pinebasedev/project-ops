@@ -7,7 +7,7 @@ import { dbRelations, projects } from "../../src/db/schema";
 import { mintToken } from "../../src/helpers/tokens";
 
 // Resolved against this module, not the working directory: the dashboard's own
-// tests import these helpers (via the `control-plane/testing` export) to run the
+// tests import these helpers (via the `api/testing` export) to run the
 // real control plane in-process, and their cwd is the other app.
 const MIGRATIONS_FOLDER = join(import.meta.dirname, "../../migrations");
 

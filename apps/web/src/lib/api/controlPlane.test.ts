@@ -1,5 +1,5 @@
-import { createApp } from "control-plane/app";
-import { createTestDb, seedProject } from "control-plane/testing";
+import { createApp } from "api/app";
+import { createTestDb, seedProject } from "api/testing";
 import { describe, expect, it } from "vitest";
 import { createApiClient } from "./client";
 import { createControlPlane, type ControlPlane } from "./controlPlane";
