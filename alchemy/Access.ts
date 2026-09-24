@@ -3,7 +3,7 @@ import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 
 /**
- * Cloudflare Access resources for the platform (ADR-0005, P6-02).
+ * Cloudflare Access resources for the platform (ADR-0005).
  *
  *   - `allowTeam`  — interactive login for the **dashboard**: the single
  *     allow-listed operator email, via the Google IdP configured in the Zero
@@ -11,7 +11,7 @@ import * as Effect from "effect/Effect";
  *   - `serviceToken` + `allowCi` — machine-to-machine access to the
  *     **control-plane API** for managed projects' GitHub Actions. The token's
  *     `clientId` / `clientSecret` become `CF_ACCESS_CLIENT_ID` /
- *     `CF_ACCESS_CLIENT_SECRET` repo secrets on each managed project (P6-05).
+ *     `CF_ACCESS_CLIENT_SECRET` repo secrets on each managed project.
  *
  * The Application itself is declared where the Worker is (`alchemy.run.ts`,
  * via its `access` prop / an explicit `Access.Application` — see ADR-0009:

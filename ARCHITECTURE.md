@@ -76,6 +76,6 @@ This is separate from the CI-time test suites (the `vitest` unit suite runs in p
 
 No dedicated AI or agent interface in this version — no dashboard chat, no MCP server. The control-plane API is a plain REST API any HTTP-capable agent can already call directly once authenticated through Access. This explicitly leaves one of the original project goals unfulfilled rather than silently dropped — see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md) for why, and what would justify revisiting it.
 
-## Implementation
+## Status
 
-Full build-order ticket sequence: [`docs/ROADMAP.md`](./docs/ROADMAP.md).
+What is built and what comes next: [`docs/ROADMAP.md`](./docs/ROADMAP.md).

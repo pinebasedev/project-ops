@@ -18,7 +18,7 @@ export const load: PageLoad = async ({ params }) => {
   ]);
 
   // The production Deployment the "compare with production" link diffs against
-  // (P4-04) — "what would promoting staging ship?". Null until production has
+  // (ADR-0007) — "what would promoting staging ship?". Null until production has
   // ever deployed.
   return {
     project,

@@ -9,7 +9,7 @@ export type Bindings = {
   // Cloudflare Access: the Zero Trust team subdomain and the control-plane
   // application's AUD tag. When both are set the Worker verifies the
   // `Cf-Access-Jwt-Assertion` header on every `/v1` request except `/v1/health`
-  // (ADR-0005, P6-03); when either is absent it runs ungated, for local
+  // (ADR-0005); when either is absent it runs ungated, for local
   // `alchemy dev`. Plain bindings, not secrets — on deploy `CF_ACCESS_AUD` comes
   // from the Access application resource and `CF_ACCESS_TEAM_DOMAIN` from deploy
   // config (ADR-0009).
@@ -25,7 +25,7 @@ export type Variables = {
   // Request-scoped structured logger, bound to `requestId`, set by
   // `loggerMiddleware`. See `helpers/logger.ts`.
   logger: Logger;
-  // The verified Access JWT claims, set by the Access middleware (P6-03). Absent
+  // The verified Access JWT claims, set by the Access middleware. Absent
   // when the Worker runs ungated (no `CF_ACCESS_*` bindings) or on `/v1/health`.
   accessJwt?: JWTPayload;
 };

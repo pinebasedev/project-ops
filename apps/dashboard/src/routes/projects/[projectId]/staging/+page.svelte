@@ -9,8 +9,8 @@
 	let integrationTests = $derived(deployment ? integrationTestPresentation(deployment) : null);
 	// Reported and at least one test failed — the "don't promote" state.
 	let failing = $derived(integrationTests?.failing === true);
-	// "What would promoting this ship?" — staging's commit against production's
-	// (P4-04). Null unless the project has a repo slug and both have deployed.
+	// "What would promoting this ship?" — staging's commit against production's.
+	// Null unless the project has a repo slug and both have deployed.
 	let compareUrl = $derived(
 		githubCompareUrl(
 			data.project.githubRepo,

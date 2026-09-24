@@ -9,7 +9,7 @@ it("exposes the typed control-plane routes", () => {
   type Projects = Awaited<ReturnType<Awaited<ReturnType<typeof api.v1.projects.$get>>["json"]>>;
   expectTypeOf<Projects>().toBeArray();
   expectTypeOf<Projects[number]>().toHaveProperty("name");
-  // The diff link-out (P4-04) reads this off the project list.
+  // The diff link-out (ADR-0007) reads this off the project list.
   expectTypeOf<Projects[number]>().toHaveProperty("githubRepo");
   expectTypeOf<Projects[number]>().not.toHaveProperty("tokenHash");
 });

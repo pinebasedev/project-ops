@@ -64,7 +64,7 @@ describe("against the real control plane", () => {
     const { id: projectId, token } = await seedProject(db);
     const app = createApp({ db, accessJwt: null });
 
-    // Drive the real callback route the way demo-project's CI does (P1-08).
+    // Drive the real callback route the way a managed project's CI does.
     const created = await app.request("/v1/deployments", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

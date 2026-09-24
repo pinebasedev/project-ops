@@ -27,7 +27,7 @@ export function createApp(overrides: AppOverrides = {}) {
   app.use("*", loggerMiddleware);
   app.use("*", secureHeadersMiddleware);
 
-  // Cloudflare Access perimeter (ADR-0005, P6-03). Verifies the edge-supplied
+  // Cloudflare Access perimeter (ADR-0005). Verifies the edge-supplied
   // JWT server-side on every `/v1` request except the health probe. The gate is
   // built once per isolate: injected config in tests, the `CF_ACCESS_*` bindings
   // in production, or absent (ungated) for local `alchemy dev`.

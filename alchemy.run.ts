@@ -15,7 +15,7 @@ import { Database } from "./alchemy/Db.ts";
  * same-origin at `/v1/*` — see docs/adr/0009), its D1
  * database, and — on deploy only — the Cloudflare Access perimeter. This is
  * where the platform is deployed for the first time, already behind Access,
- * never before (see docs/adr/0009 + docs/ROADMAP.md sequencing).
+ * never before (see docs/adr/0009).
  *
  * `alchemy dev` runs the whole stack against local simulators (workerd + a
  * local D1) — it needs a Cloudflare identity (`alchemy profile edit --add
