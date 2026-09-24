@@ -1,12 +1,13 @@
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
-import { stringOr } from "./config.ts";
 
 /**
  * Cloudflare Access resources for the platform (ADR-0005, P6-02).
  *
- *   - `allowTeam`  — interactive login for the **dashboard**: the founder only,
- *     via the Google IdP configured in the Zero Trust org.
+ *   - `allowTeam`  — interactive login for the **dashboard**: the single
+ *     allow-listed operator email, via the Google IdP configured in the Zero
+ *     Trust org.
  *   - `serviceToken` + `allowCi` — machine-to-machine access to the
  *     **control-plane API** for managed projects' GitHub Actions. The token's
  *     `clientId` / `clientSecret` become `CF_ACCESS_CLIENT_ID` /
@@ -18,9 +19,10 @@ import { stringOr } from "./config.ts";
  * policies plus the token.
  */
 export const accessResources = Effect.gen(function* () {
-  // Who may log in to the dashboard. Defaults to the founder; a self-hoster
-  // overrides it via CF_ACCESS_ALLOW_EMAIL without touching this file (ADR-0005).
-  const allowEmail = yield* stringOr("CF_ACCESS_ALLOW_EMAIL", "oros.stefan18@gmail.com");
+  // Who may log in to the dashboard (ADR-0005). Required, with no default:
+  // these resources only exist on deploy, and a baked-in fallback would grant
+  // that address login to every deployment that forgot to set it.
+  const allowEmail = yield* Config.String("CF_ACCESS_ALLOW_EMAIL");
 
   const serviceToken = yield* Cloudflare.Access.ServiceToken("github-actions", {
     name: "cloudflare-idp-github-actions",

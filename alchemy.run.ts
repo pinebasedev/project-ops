@@ -1,6 +1,7 @@
 import * as Alchemy from "alchemy";
 import { ALCHEMY_DEV } from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
@@ -50,7 +51,7 @@ export default Alchemy.Stack(
     // for server-side JWT verification (P6-03).
     //
     // Both `allowCi` (the shared GitHub Actions service token) and `allowTeam`
-    // (the founder's Google login) sit on this one Application, gating the
+    // (the operator's Google login) sit on this one Application, gating the
     // whole merged Worker — Access only answers "can this reach the Worker at
     // all," not "which kind of caller is this for which route." That split
     // happens server-side, off the verified JWT's `email` claim (present only
@@ -60,7 +61,9 @@ export default Alchemy.Stack(
     // `requireIdentityMiddleware`, same as before the merge.)
     const buildAccess = Effect.gen(function* () {
       const { serviceToken, allowTeam, allowCi } = yield* accessResources;
-      const googleIdpId = yield* stringOr("CF_GOOGLE_IDP_ID", "dev-google-idp");
+      // Required on deploy — a placeholder IdP id would stand up an
+      // Application nobody can log in to.
+      const googleIdpId = yield* Config.String("CF_GOOGLE_IDP_ID");
       const application = yield* Cloudflare.Access.Application("app-access", {
         type: "self_hosted",
         name: "cloudflare-idp platform",
@@ -86,7 +89,7 @@ export default Alchemy.Stack(
       // request, indexed and queryable in the dashboard. On by default in
       // Alchemy; set explicitly so the sampling rate is visible here. Keep at
       // 1 — this is low-traffic (one GitHub Actions run per deploy, plus the
-      // founder's own dashboard use) and every request matters.
+      // operator's own dashboard use) and every request matters.
       observability: {
         enabled: true,
         headSamplingRate: 1,
