@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Cloudflare IDP</title>
+	<title>Project Ops</title>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 {@render children()}

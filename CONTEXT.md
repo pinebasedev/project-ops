@@ -1,4 +1,4 @@
-# Cloudflare IDP
+# Project Ops
 
 A lightweight, opinionated internal developer platform for applications running on Cloudflare: it provisions ephemeral per-PR infrastructure, promotes commits through staging and production, and gives developers (and their AI agents) a single place to see what's deployed and why.
 

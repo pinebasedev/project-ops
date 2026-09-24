@@ -12,7 +12,7 @@ import * as Cloudflare from "alchemy/Cloudflare";
  * `name` is pinned explicitly: the first argument ("control-plane-db") is
  * only Alchemy's own internal logical resource id, not the actual Cloudflare
  * database name — left unset, Alchemy auto-generates a machine/stage-specific
- * physical name (e.g. `cloudflare-idp-control-plane-db-live-<user>-<random>`)
+ * physical name (e.g. `project-ops-control-plane-db-live-<user>-<random>`)
  * instead. demo-project's bootstrap stack (`alchemy/github.ts`) shells out to
  * `wrangler d1 execute control-plane-db --remote` directly — it has to assume
  * a stable, predictable name since it isn't itself an Alchemy resource that

@@ -25,17 +25,17 @@ export const accessResources = Effect.gen(function* () {
   const allowEmail = yield* Config.String("CF_ACCESS_ALLOW_EMAIL");
 
   const serviceToken = yield* Cloudflare.Access.ServiceToken("github-actions", {
-    name: "cloudflare-idp-github-actions",
+    name: "project-ops-github-actions",
   });
 
   const allowTeam = yield* Cloudflare.Access.Policy("allow-team", {
-    name: "cloudflare-idp dashboard — allow-list",
+    name: "project-ops dashboard — allow-list",
     decision: "allow",
     include: [{ email: allowEmail }],
   });
 
   const allowCi = yield* Cloudflare.Access.Policy("allow-ci", {
-    name: "cloudflare-idp control-plane — CI service token",
+    name: "project-ops control-plane — CI service token",
     decision: "non_identity",
     include: [{ serviceToken: serviceToken.serviceTokenId }],
   });

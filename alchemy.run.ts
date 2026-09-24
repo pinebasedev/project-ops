@@ -35,7 +35,7 @@ import { Database } from "./alchemy/Db.ts";
  * and the end-to-end check (P6-06) are driven by scripts/phase-6-deploy.sh.
  */
 export default Alchemy.Stack(
-  "cloudflare-idp",
+  "project-ops",
   {
     providers: Layer.mergeAll(Cloudflare.providers()),
     state: process.env.CI ? Cloudflare.state() : Alchemy.localState(),
@@ -66,7 +66,7 @@ export default Alchemy.Stack(
       const googleIdpId = yield* Config.String("CF_GOOGLE_IDP_ID");
       const application = yield* Cloudflare.Access.Application("app-access", {
         type: "self_hosted",
-        name: "cloudflare-idp platform",
+        name: "project-ops platform",
         policies: [allowCi, allowTeam],
         allowedIdps: [googleIdpId],
         autoRedirectToIdentity: true,
