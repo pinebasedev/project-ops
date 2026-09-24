@@ -1,6 +1,11 @@
 {
   "name": "project-ops",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinebasedev/project-ops.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=24"
