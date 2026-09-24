@@ -20,7 +20,7 @@ Where the platform stands and what comes next. The design is in [`ARCHITECTURE.m
 **Provisioning**
 - One Alchemy stack deploys the platform itself, behind Cloudflare Access ([ADR-0009](./adr/0009-platform-self-provisioning-stack.md)).
 - A deploy wizard (`scripts/deploy-wizard.sh`) and an onboarding wizard for managed projects (`scripts/onboard-project.sh`).
-- Verified end to end on a real deploy: the reference managed project (demo-project) deploys PR environments, staging, and production from its own GitHub Actions, and the dashboard reflects each one.
+- Verified end to end on a real deploy: a managed project deploys PR environments, staging, and production from its own GitHub Actions, and the dashboard reflects each one.
 
 ## Next
 

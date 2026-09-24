@@ -245,8 +245,8 @@ say ""
 CLOUDFLARE_ACCOUNT_ID=$(_existing CLOUDFLARE_ACCOUNT_ID || true)
 say "In the project's checkout, run its bootstrap stack with:"
 note "  ALCHEMY_PROFILE=admin CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-<account id>} GITHUB_REPO=$PROJECT_REPO \\"
-note "  CONTROL_PLANE_DB=production-project-ops-db"
-note "(demo-project's is 'pnpm bootstrap:github')."
+note "  CONTROL_PLANE_DB=production-project-ops-db <its bootstrap command>"
+note "(e.g. 'pnpm bootstrap:github'; see docs/managed-projects.md)."
 pause "Enter when it finishes."
 
 # ── Stage 3: Access credentials + callback URL ────────────────────────────

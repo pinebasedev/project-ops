@@ -6,7 +6,7 @@ This document ties together the domain glossary ([`CONTEXT.md`](./CONTEXT.md)) a
 
 ## Components
 
-- **Managed Projects** — applications onboarded into the platform, living in their own repositories (e.g. demo-project). Each owns its own GitHub Actions workflows.
+- **Managed Projects** — applications onboarded into the platform, living in their own repositories. Each owns its own GitHub Actions workflows.
 - **Dashboard + control-plane API** — a single SvelteKit app (Svelte UI in `apps/web`, Hono API in `apps/api`), deployed as one Cloudflare Worker. The Hono app — system of record for Projects, Environments, Deployments, and CI results, D1-backed, see [ADR-0003](./docs/adr/0003-d1-only-no-durable-objects.md) — is mounted same-origin under `/v1/*`; the dashboard is the human-facing UI over it. `apps/api` holds the API code as a workspace-internal library (not its own deploy target); `apps/web` is what actually deploys. See [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md).
 - **Alchemy** — provisions the actual Cloudflare infrastructure (Workers, D1, etc.) per Project/Environment, executed from each managed Project's own GitHub Actions, not from the control plane. See [ADR-0001](./docs/adr/0001-alchemy-provisioning-driven-by-github-actions.md).
 - **Cloudflare Access** — gates the whole dashboard + control-plane Worker. See [ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md) and [ADR-0011](./docs/adr/0011-one-access-application-identity-scoped-reads.md).
