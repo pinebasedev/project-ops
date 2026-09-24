@@ -6,6 +6,9 @@ allowBuilds:
   # The pure-JS path is used instead — no build step needed.
   msgpackr-extract: false
   workerd: true
+# Refuse to install a version published less than a day ago (minutes), so a
+# compromised release has time to be caught. Keep Dependabot's cooldown above it.
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - hono@4.13.7
   - '@cloudflare/workers-types@5.20260905.1'
