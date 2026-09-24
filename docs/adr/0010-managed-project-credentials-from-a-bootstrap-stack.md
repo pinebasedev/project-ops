@@ -1,6 +1,6 @@
 # A managed project's credentials are minted by a one-time Alchemy bootstrap stack
 
-Status: accepted. Partially implemented: the bootstrap stack mints the Cloudflare CI token; minting the bearer token and pushing the Access service-token credentials are still to do.
+Status: accepted. Partially implemented: the bootstrap stack mints the Cloudflare CI token and the bearer token; pushing the Access service-token credentials is still to do.
 Date: 2026-09-22
 
 [ADR-0001](./0001-alchemy-provisioning-driven-by-github-actions.md) never said how a managed project's credentials reach its repo secrets. Until now that was a human job: create a Cloudflare Custom Token in the dashboard, copy the control-plane bearer token out of a registration response, copy the Access service-token credentials out of the platform's deploy output, and paste all of them into a wizard that ran `gh secret set`. None of that was reviewable in a diff or reproducible on rotation.

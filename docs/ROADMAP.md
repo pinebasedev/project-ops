@@ -20,11 +20,12 @@ Where the platform stands and what comes next. The design is in [`ARCHITECTURE.m
 **Provisioning**
 - One Alchemy stack deploys the platform itself, behind Cloudflare Access ([ADR-0009](./adr/0009-platform-self-provisioning-stack.md)).
 - A deploy wizard (`scripts/deploy-wizard.sh`) and an onboarding wizard for managed projects (`scripts/onboard-project.sh`).
+- A per-project credential bootstrap stack that mints the project's Cloudflare CI token and its control-plane bearer token, and pushes both into the project's repo secrets ([ADR-0010](./adr/0010-managed-project-credentials-from-a-bootstrap-stack.md)).
 - Verified end to end on a real deploy: a managed project deploys PR environments, staging, and production from its own GitHub Actions, and the dashboard reflects each one.
 
 ## Next
 
-- **Credential bootstrap**, finished: the bootstrap stack also mints the bearer token and pushes the Access service-token credentials ([ADR-0010](./adr/0010-managed-project-credentials-from-a-bootstrap-stack.md)).
+- **Credential bootstrap:** also push the Access service-token credentials, so onboarding needs no manual secret step ([ADR-0010](./adr/0010-managed-project-credentials-from-a-bootstrap-stack.md)).
 - **Integration and end-to-end tests:** they live in each managed project's repository for now, reporting results through the callback ([ADR-0006](./adr/0006-integration-tests-run-once-on-staging.md)). Shared test tooling may move into this repo later.
 - **Destroyed environments:** record when a PR environment is torn down, so closed PRs drop out of the dashboard.
 
