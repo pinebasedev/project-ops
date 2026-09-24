@@ -29,7 +29,7 @@ describe("requireIdentityMiddleware", () => {
   });
 
   it("admits an Access JWT with an email claim (an identity login)", async () => {
-    const res = await appWithAccessJwt({ email: "oros.stefan18@gmail.com" }).request("/whoami");
+    const res = await appWithAccessJwt({ email: "user@example.com" }).request("/whoami");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
   });

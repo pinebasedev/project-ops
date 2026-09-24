@@ -49,7 +49,7 @@ describe("createApp with the Access gate enabled", () => {
   const gated = async () =>
     createApp({
       db: await createTestDb(),
-      accessJwt: { teamDomain: "pinebase", aud: TEST_AUD, keys: [keypair.publicJwk] },
+      accessJwt: { teamDomain: "example-team", aud: TEST_AUD, keys: [keypair.publicJwk] },
     });
 
   it("leaves /v1/health reachable without an assertion", async () => {
@@ -63,7 +63,7 @@ describe("createApp with the Access gate enabled", () => {
   });
 
   it("admits an identity-authenticated request carrying a valid assertion", async () => {
-    const token = await signAccessToken(keypair.privateJwk, { email: "oros.stefan18@gmail.com" });
+    const token = await signAccessToken(keypair.privateJwk, { email: "user@example.com" });
     const res = await (
       await gated()
     ).request("/v1/environments/does-not-exist", {
@@ -90,7 +90,7 @@ describe("createApp with the Access gate enabled", () => {
   });
 
   it("admits an identity-authenticated request on a dashboard-only read", async () => {
-    const token = await signAccessToken(keypair.privateJwk, { email: "oros.stefan18@gmail.com" });
+    const token = await signAccessToken(keypair.privateJwk, { email: "user@example.com" });
     const res = await (
       await gated()
     ).request("/v1/projects", {

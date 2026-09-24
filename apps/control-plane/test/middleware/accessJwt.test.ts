@@ -12,7 +12,7 @@ import { generateKeypair, signAccessToken, TEST_AUD, type Keypair } from "../hel
 /** A tiny app that gates everything behind the middleware under test. */
 function gatedApp(keys: Keypair["publicJwk"][]) {
   const app = new Hono<Env>();
-  app.use("*", createAccessJwtMiddleware({ teamDomain: "pinebase", aud: TEST_AUD, keys }));
+  app.use("*", createAccessJwtMiddleware({ teamDomain: "example-team", aud: TEST_AUD, keys }));
   app.get("/whoami", (c) => c.json({ email: c.get("accessJwt")?.email ?? null }));
   return app;
 }
@@ -33,12 +33,12 @@ describe("createAccessJwtMiddleware", () => {
   });
 
   it("accepts a valid token and exposes its payload on the context", async () => {
-    const token = await signAccessToken(keypair.privateJwk, { email: "oros.stefan18@gmail.com" });
+    const token = await signAccessToken(keypair.privateJwk, { email: "user@example.com" });
     const res = await gatedApp([keypair.publicJwk]).request("/whoami", {
       headers: { [ACCESS_JWT_HEADER]: token },
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ email: "oros.stefan18@gmail.com" });
+    expect(await res.json()).toEqual({ email: "user@example.com" });
   });
 
   it("rejects a token signed by a key that isn't in the JWKS", async () => {
@@ -82,7 +82,7 @@ describe("createAccessJwtMiddleware", () => {
     const app = new Hono<Env>();
     app.use(
       "*",
-      createAccessJwtMiddleware({ teamDomain: "pinebase", aud: TEST_AUD, fetch: fetchMock }),
+      createAccessJwtMiddleware({ teamDomain: "example-team", aud: TEST_AUD, fetch: fetchMock }),
     );
     app.get("/whoami", (c) => c.json({ ok: true }));
 
@@ -92,7 +92,7 @@ describe("createAccessJwtMiddleware", () => {
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0]![0]).toBe(
-      "https://pinebase.cloudflareaccess.com/cdn-cgi/access/certs",
+      "https://example-team.cloudflareaccess.com/cdn-cgi/access/certs",
     );
   });
 
@@ -105,7 +105,7 @@ describe("createAccessJwtMiddleware", () => {
     app.use(
       "*",
       createAccessJwtMiddleware({
-        teamDomain: "pinebase",
+        teamDomain: "example-team",
         aud: TEST_AUD,
         keys: [keypair.publicJwk],
       }),
@@ -127,13 +127,13 @@ describe("createAccessJwtMiddleware", () => {
 describe("accessJwtConfigFromEnv", () => {
   it("returns null unless both the team domain and the aud tag are set", () => {
     expect(accessJwtConfigFromEnv(undefined)).toBeNull();
-    expect(accessJwtConfigFromEnv({ CF_ACCESS_TEAM_DOMAIN: "pinebase" })).toBeNull();
+    expect(accessJwtConfigFromEnv({ CF_ACCESS_TEAM_DOMAIN: "example-team" })).toBeNull();
     expect(accessJwtConfigFromEnv({ CF_ACCESS_AUD: "aud" })).toBeNull();
   });
 
   it("builds a config when both are present", () => {
     expect(
-      accessJwtConfigFromEnv({ CF_ACCESS_TEAM_DOMAIN: "pinebase", CF_ACCESS_AUD: "aud" }),
-    ).toEqual({ teamDomain: "pinebase", aud: "aud" });
+      accessJwtConfigFromEnv({ CF_ACCESS_TEAM_DOMAIN: "example-team", CF_ACCESS_AUD: "aud" }),
+    ).toEqual({ teamDomain: "example-team", aud: "aud" });
   });
 });

@@ -33,7 +33,7 @@ export async function generateKeypair(kid = "key-1"): Promise<Keypair> {
 export function signAccessToken(
   privateJwk: HonoJsonWebKey,
   claims: Record<string, unknown> = {},
-  { teamDomain = "pinebase", aud = TEST_AUD }: { teamDomain?: string; aud?: string } = {},
+  { teamDomain = "example-team", aud = TEST_AUD }: { teamDomain?: string; aud?: string } = {},
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   return Jwt.sign(

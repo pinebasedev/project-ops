@@ -71,8 +71,8 @@ describe("integrationTestPresentation", () => {
 
 describe("githubCompareUrl", () => {
   it("builds a compare URL from a repo slug and two SHAs", () => {
-    expect(githubCompareUrl("pinebase/demo-project", "aaa111", "bbb222")).toBe(
-      "https://github.com/pinebase/demo-project/compare/aaa111...bbb222",
+    expect(githubCompareUrl("example-org/demo-project", "aaa111", "bbb222")).toBe(
+      "https://github.com/example-org/demo-project/compare/aaa111...bbb222",
     );
   });
 
@@ -83,12 +83,12 @@ describe("githubCompareUrl", () => {
   });
 
   it("returns null when either SHA is missing", () => {
-    expect(githubCompareUrl("pinebase/demo-project", null, "bbb222")).toBeNull();
-    expect(githubCompareUrl("pinebase/demo-project", "aaa111", undefined)).toBeNull();
+    expect(githubCompareUrl("example-org/demo-project", null, "bbb222")).toBeNull();
+    expect(githubCompareUrl("example-org/demo-project", "aaa111", undefined)).toBeNull();
   });
 
   it("returns null when both SHAs are the same — there is nothing to compare", () => {
-    expect(githubCompareUrl("pinebase/demo-project", "aaa111", "aaa111")).toBeNull();
+    expect(githubCompareUrl("example-org/demo-project", "aaa111", "aaa111")).toBeNull();
   });
 });
 

@@ -20,13 +20,13 @@ describe("GET /v1/projects", () => {
 
   it("exposes each project's github repo slug (null when unset)", async () => {
     const db = await createTestDb();
-    await seedProject(db, { name: "with-repo", githubRepo: "pinebase/demo-project" });
+    await seedProject(db, { name: "with-repo", githubRepo: "example-org/demo-project" });
     await seedProject(db, { name: "without-repo" });
     const app = createApp({ db });
 
     const res = await app.request("/v1/projects");
     const body = (await res.json()) as { name: string; githubRepo: string | null }[];
-    expect(body.find((p) => p.name === "with-repo")?.githubRepo).toBe("pinebase/demo-project");
+    expect(body.find((p) => p.name === "with-repo")?.githubRepo).toBe("example-org/demo-project");
     expect(body.find((p) => p.name === "without-repo")?.githubRepo).toBeNull();
   });
 
