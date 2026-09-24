@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Each ADR records one decision that is hard to reverse, surprising without context, and the result of a real trade-off. Terms follow the glossary in [`CONTEXT.md`](../../CONTEXT.md); [`ARCHITECTURE.md`](../../ARCHITECTURE.md) ties the decisions together.
+Each ADR records one decision that is hard to reverse, surprising without context, and the result of a real trade-off. Terms follow the glossary in [`architecture.md`](../architecture.md#glossary), which also ties the decisions together.
 
 | # | Decision | Status | Date |
 |---|---|---|---|

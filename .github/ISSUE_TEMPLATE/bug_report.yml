@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Security issues go through the Security tab, not here. See SECURITY.md.
+        Security issues go through the Security tab, not here.
   - type: textarea
     id: what-happened
     attributes:

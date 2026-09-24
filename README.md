@@ -24,8 +24,7 @@ merge staging into main
 
 The control plane never deploys anything. Each managed project's CI reports what it did, and the dashboard shows the history. Promotion is a plain Git merge.
 
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md): components, lifecycle, and auth.
-- [`CONTEXT.md`](./CONTEXT.md): the glossary (Project, Environment, Stage, Deployment, Promotion).
+- [`docs/architecture.md`](./docs/architecture.md): the glossary (Project, Environment, Stage, Deployment, Promotion), components, lifecycle, and auth.
 - [`docs/adr/`](./docs/adr/): the decisions behind the design, and why.
 - [`docs/managed-projects.md`](./docs/managed-projects.md): what an app needs in order to be managed by the platform.
 
@@ -69,10 +68,6 @@ It connects Alchemy to your account, collects the Zero Trust settings into a git
 | `alchemy.run.ts`, `alchemy/` | The Alchemy stack that provisions the platform itself. |
 | `scripts/` | The deploy and onboarding wizards. |
 | `docs/` | ADRs, roadmap, and the managed-project contract. |
-
-## Contributing
-
-Small, clearly correct fixes are welcome. For anything larger, open an issue to discuss it first. See [`CONTRIBUTING.md`](./CONTRIBUTING.md). To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
 
 ## Credits
 

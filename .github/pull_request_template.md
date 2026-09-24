@@ -1,6 +1,6 @@
 > [!IMPORTANT]
 > Small, clearly correct fixes only. For features, refactors, or design changes,
-> [open an issue](https://github.com/pinebasedev/project-ops/issues/new/choose) first. See [CONTRIBUTING.md](https://github.com/pinebasedev/project-ops/blob/main/CONTRIBUTING.md).
+> [open an issue](https://github.com/pinebasedev/project-ops/issues/new/choose) first.
 
 ## What does this change?
 
@@ -14,5 +14,5 @@
 
 - [ ] This is a small, focused change: not a feature, a refactor, or a cosmetic cleanup.
 - [ ] `pnpm check && pnpm test && pnpm lint && pnpm format:check` pass locally.
-- [ ] Commits follow the Conventional Commits rules in CONTRIBUTING.md.
+- [ ] Commits follow Conventional Commits with a scope from `commitlint.config.js`.
 - [ ] If this changes an accepted ADR's decision, it adds a new ADR.

@@ -1,6 +1,6 @@
 # Roadmap
 
-Where the platform stands and what comes next. The design is in [`ARCHITECTURE.md`](../ARCHITECTURE.md); individual decisions are in [`docs/adr/`](./adr/).
+Where the platform stands and what comes next. The design is in [`architecture.md`](./architecture.md); individual decisions are in [`docs/adr/`](./adr/).
 
 ## Built
 

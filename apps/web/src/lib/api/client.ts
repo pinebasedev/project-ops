@@ -10,7 +10,7 @@ const baseUrl = "/";
 
 /**
  * End-to-end typed RPC client for the control-plane API, derived from its Hono
- * `AppType` export — no codegen. See ARCHITECTURE.md ("Typed client").
+ * `AppType` export — no codegen. See docs/architecture.md ("Typed client").
  *
  * This is transport only. Callers go through the control-plane module in
  * `controlPlane.ts` rather than reaching for this directly, so the HTTP error

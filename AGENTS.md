@@ -1,6 +1,6 @@
 # AGENTS.md
 
-An internal developer platform for Cloudflare apps. Read [`CONTEXT.md`](./CONTEXT.md) and use its terms (Project, Environment, Stage, Deployment, Promotion). [`ARCHITECTURE.md`](./ARCHITECTURE.md) explains how the pieces fit, and [`docs/adr/`](./docs/adr/) explains why.
+An internal developer platform for Cloudflare apps. [`docs/architecture.md`](./docs/architecture.md) explains how the pieces fit and defines the terms to use (Project, Environment, Stage, Deployment, Promotion), and [`docs/adr/`](./docs/adr/) explains why.
 
 ## Layout
 
@@ -16,7 +16,7 @@ An internal developer platform for Cloudflare apps. Read [`CONTEXT.md`](./CONTEX
 - API tests run in Node against an in-memory libsql database. Web tests of `lib/api/controlPlane.ts` run the real API app in-process (`api/testing`), so extend that setup rather than mocking the transport.
 - For a schema change, edit `apps/api/src/db/schema.ts` and run `pnpm --filter api db:generate`. Alchemy applies migrations on deploy.
 - Access is off under `alchemy dev` (`ALCHEMY_DEV` guard) and the JWT middleware runs ungated when `CF_ACCESS_AUD` is unset. That is the intended local state, not a bug.
-- Every change must keep the auth layers in [`ARCHITECTURE.md`](./ARCHITECTURE.md#auth--four-layers) intact.
+- Every change must keep the auth layers in [`docs/architecture.md`](./docs/architecture.md#auth--four-layers) intact.
 - A change to an accepted decision gets a new ADR ([`docs/adr/README.md`](./docs/adr/README.md)), and the old ADR's `Status:` line points to it. The old ADR's body stays as written.
-- Commits: Conventional Commits with a required scope from [`commitlint.config.js`](./commitlint.config.js), one logical change each. See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+- Commits: Conventional Commits with a required scope from [`commitlint.config.js`](./commitlint.config.js), one logical change each.
 - Agent skills for Cloudflare, Hono, Svelte, and shadcn-svelte are pinned in each directory's `skills-lock.json`. Restore them with `pnpm dlx skills experimental_install`.

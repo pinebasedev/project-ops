@@ -8,7 +8,7 @@ Both the dashboard and the control-plane API — one SvelteKit Worker, the API m
 - **Two kinds of caller**: an interactive-login policy (`allow-team`, a single allow-listed email) for the operator using the dashboard, and a Service Token policy (`allow-ci`) for managed projects' GitHub Actions workflows, which authenticate with a `CF-Access-Client-Id`/`CF-Access-Client-Secret` pair (an `Access.ServiceToken` resource).
 - **Defense in depth**: the Worker itself also verifies the `Cf-Access-Jwt-Assertion` header server-side (against the Zero Trust team's JWKS), rather than trusting the network path alone. The app stays non-functional even if Access were ever misconfigured or bypassed at the edge.
 
-This sits entirely on top of, and independent from, the per-project bearer tokens (see `Project` in [CONTEXT.md](../../CONTEXT.md)) used to authorize *which* Project a write belongs to — Access answers "can this request reach the Worker at all," the per-project token still answers "which project." A leaked Access service token doesn't expose project data on its own; a request still needs a valid per-project token to write anything.
+This sits entirely on top of, and independent from, the per-project bearer tokens (see `Project` in [the glossary](../architecture.md#glossary)) used to authorize *which* Project a write belongs to — Access answers "can this request reach the Worker at all," the per-project token still answers "which project." A leaked Access service token doesn't expose project data on its own; a request still needs a valid per-project token to write anything.
 
 ## Consequences
 
