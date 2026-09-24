@@ -8,7 +8,7 @@ Include what's affected, how to reproduce it, and the impact you expect. You can
 
 ## Supported versions
 
-Only the latest commit on `main` is supported. There are no release branches.
+Only the latest release and the latest commit on `main` are supported. There are no release branches.
 
 ## Scope
 

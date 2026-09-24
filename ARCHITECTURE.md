@@ -1,6 +1,6 @@
 # Architecture
 
-A lightweight, opinionated internal developer platform for applications running on Cloudflare. Central control plane for multiple Projects; ephemeral per-PR infrastructure, staging, and production, all provisioned by [Alchemy](https://alchemy.run); developers (and their coding agents) query deployment state through the dashboard or its REST API.
+A lightweight, opinionated internal developer platform for applications running on Cloudflare. Central control plane for multiple Projects; ephemeral per-PR infrastructure, staging, and production, all provisioned by [Alchemy](https://alchemy.run); developers see deployment state in one dashboard.
 
 This document ties together the domain glossary ([`CONTEXT.md`](./CONTEXT.md)) and the individual architecture decisions ([`docs/adr/`](./docs/adr/)) into one picture. It documents the design, not the code.
 
@@ -22,10 +22,10 @@ feature branch
   → Alchemy provisions isolated PR infrastructure (stage `pr-{number}`)
   → preview deployment + preview URL (posted as a PR comment by Alchemy's GitHub.Comment resource)
   → new commits → unit tests again → same PR environment redeployed (same stage name)
-  → PR merged into `staging`
+  → PR merged into `staging` (or closed without merging)
       → PR infrastructure destroyed (`alchemy destroy --stage pr-{number}`, guarded against ever targeting prod)
-      → `staging` Environment redeploys (stage `staging`)
-      → Integration Tests run once, live, against staging
+      → on merge: `staging` Environment redeploys (stage `staging`)
+      → optional: Integration Tests run once, live, against staging and report back
   → human reviews staging (dashboard shows current deployment + test status)
   → promotion: `staging` branch merged into `main` — a plain git merge, no dashboard action, no automated gate
       → `main` merge deploys `production` Environment (stage `prod`)
@@ -38,7 +38,7 @@ Terms: [`Project`](./CONTEXT.md), [`Environment`](./CONTEXT.md), [`Stage`](./CON
 1. **Per-Project write access** (a managed Project's GitHub Actions → control-plane API): an opaque token minted once per Project, stored hashed in D1, sent as `Authorization: Bearer`, held by the managed repo as a GitHub Actions secret. Deliberately per-project rather than a single shared signed token, so that a leaked credential (compromised third-party Action, malicious dependency install script, fork-PR misconfiguration, etc.) only ever exposes one Project.
 2. **Perimeter** (can this request reach the Worker at all): Cloudflare Access in front of the one dashboard + control-plane Worker, declared as Alchemy resources in the same stack that provisions everything else — not a manual, skippable setup step. Its Access Application carries both an interactive-login policy (the dashboard's single allow-listed email, via Google login) and a Service Token policy (GitHub Actions) — Access alone only answers "some valid credential," not which kind. See [ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md).
 3. **Defense in depth**: the Worker itself verifies the Access JWT server-side rather than trusting the network path alone, so the app stays non-functional even if Access were ever misconfigured at the edge.
-4. **Read scoping**: the four control-plane reads that exist only for the dashboard (`GET /v1/projects`, its `/environments`, `GET /v1/environments/:id`, `GET /v1/deployments/:id`) require the verified Access JWT to carry an identity `email` claim — present for the operator's Google login, absent for a Service Token — so a leaked/shared CI credential can write only its own Project (surface #1) and can't read any Project's data at all. See [ADR-0011](./docs/adr/0011-one-access-application-identity-scoped-reads.md).
+4. **Read scoping**: the four control-plane read routes (`GET /v1/projects`, its `/environments`, `GET /v1/environments/:id`, `GET /v1/deployments/:id`) require the verified Access JWT to carry an identity `email` claim — present for the operator's Google login, absent for a Service Token — so a leaked/shared CI credential can write only its own Project (surface #1) and can't read any Project's data at all. See [ADR-0011](./docs/adr/0011-one-access-application-identity-scoped-reads.md).
 
 The control plane holds no Cloudflare API credential of its own at runtime (see [ADR-0012](./docs/adr/0012-no-platform-cloudflare-api-credential.md)) — its only bindings are `DB` and the plain Access strings (`CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`). Alchemy's own deploy-time Cloudflare authentication is a local OAuth session (`alchemy profile`, cached to `~/.alchemy` on the deploying machine), never a Worker binding. How a managed project gets its own credentials (Cloudflare CI token, bearer token, Access service token) is covered by [ADR-0010](./docs/adr/0010-managed-project-credentials-from-a-bootstrap-stack.md).
 
@@ -49,7 +49,7 @@ The control plane holds no Cloudflare API credential of its own at runtime (see 
 - **API conventions**: routes mounted under `/v1`, composed in `routes/index.ts`; `requestId` and `secureHeaders` middleware on every request; a centralized `onError` handler returning sanitized JSON (no leaking internals or stack traces in responses); a `notFound` handler. Folder separation: `routes/`, `middleware/`, `helpers/`, `db/`.
 - **Typed client**: the dashboard calls the control-plane API via Hono's `AppType` export (an RPC-style client, `hc<AppType>()`) for end-to-end type safety with zero codegen, over a same-origin `/v1/*` mounted in the dashboard's own Worker (see [ADR-0009](./docs/adr/0009-platform-self-provisioning-stack.md)). This couples the dashboard's build to the control-plane's types at compile time — accepted, since both live in the same pnpm workspace.
 - **Control-plane module**: page loaders never touch the RPC client directly. `lib/api/controlPlane.ts` is the dashboard's one interface onto the control plane — the five reads the views need — and absorbs the HTTP failure protocol (502 unreachable, 401 expired Access session, 404 missing) and the response-union narrowing. It takes its client as a parameter, so its tests run the real control-plane app in-process over an in-memory SQLite database (`api/testing`) rather than mocking the transport.
-- **UI**: Tailwind + shadcn-svelte, built directly inside `apps/web` — no separate shared UI package, since there is only one frontend. Components installed via `pnpm dlx skills add huntabyte/shadcn-svelte` (plus the relevant Svelte skills), not hand-copied.
+- **UI**: Tailwind + shadcn-svelte, built directly inside `apps/web` — no separate shared UI package, since there is only one frontend. Components are added with the shadcn-svelte CLI (`apps/web/components.json`), not hand-copied.
 - **Local config**: a gitignored root `.env` (see `.env.example`) for deploy-time config (the Access team domain, Google IdP id, allow-listed email). `alchemy dev` needs none of it; `alchemy deploy` fails if the Access values are missing. There is no application secret in this file — see "Auth" above.
 - **No app-managed login**: there are no users, passwords, or sessions in the app. Cloudflare Access ([ADR-0005](./docs/adr/0005-cloudflare-access-in-front-of-dashboard-and-api.md)) issues and manages the session.
 
@@ -71,7 +71,7 @@ Tests here are unit tests (`vitest`, in plain Node against an in-memory libsql D
 
 ## AI / agent interaction
 
-No dedicated AI or agent interface in this version — no dashboard chat, no MCP server. The control-plane API is a plain REST API any HTTP-capable agent can already call directly once authenticated through Access. This explicitly leaves one of the original project goals unfulfilled rather than silently dropped — see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md) for why, and what would justify revisiting it.
+No dedicated AI or agent interface in this version — no dashboard chat, no MCP server. The control-plane API is a plain REST API any HTTP-capable agent can already call directly with an Access identity login (its read routes reject service tokens, see [ADR-0011](./docs/adr/0011-one-access-application-identity-scoped-reads.md)). This explicitly leaves one of the original project goals unfulfilled rather than silently dropped — see [ADR-0008](./docs/adr/0008-no-ai-interface-this-version.md) for why, and what would justify revisiting it.
 
 ## Status
 

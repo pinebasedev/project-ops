@@ -16,7 +16,8 @@ feature branch → PR against staging
   → unit tests
   → Alchemy provisions an isolated pr-{number} environment → preview URL on the PR
 merge into staging
-  → pr-{number} destroyed, staging redeployed, live tests run against it
+  → pr-{number} destroyed (also when a PR closes unmerged)
+  → staging redeployed, optional live tests report their results
 merge staging into main
   → production deployed
 ```
