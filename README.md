@@ -1,11 +1,13 @@
 # Project Ops
 
-A small, opinionated internal developer platform for apps that run on Cloudflare.
+**v0.1**: previews, staging, and production for your Cloudflare apps, with one dashboard to follow them.
 
-Every pull request gets its own isolated environment. Merging into `staging` deploys staging, and merging `staging` into `main` deploys production. A central dashboard shows what is deployed where, at which commit, and whether staging's live tests passed. Each managed project provisions itself with [Alchemy](https://alchemy.run) from its own GitHub Actions and reports to a control plane, and the whole platform sits behind Cloudflare Access.
+Project Ops is one place to manage your projects on Cloudflare. Today it tracks deployments: every pull request gets its own preview environment, and the dashboard shows what is deployed where and at which commit. It is meant to grow into the place where you see and manage much more of each project on the Cloudflare platform.
+
+It works with any app that follows the [managed-project contract](./docs/managed-projects.md). [Svelteflare](https://github.com/pinebasedev/svelteflare) is set up for it out of the box.
 
 > [!WARNING]
-> **Early access.** Built and run by a single maintainer. Expect rough edges and breaking changes. See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for what's built and what's next.
+> **Actively developed.** Expect rough edges and breaking changes between versions. See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for what's built and what's next.
 
 ## How it works
 
